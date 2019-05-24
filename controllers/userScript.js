@@ -6,6 +6,7 @@ let bcrypt = require('bcrypt-nodejs');
 let jwt = require('./jwt');
 let mongoose = require('mongoose');
 let User = mongoose.model('User');
+let ObjectId = require('mongodb').ObjectID;
 
 exports.login = async function (req, res) {
     let user = req.body;
@@ -47,7 +48,6 @@ exports.register = async function (req, res) {
 
 exports.searchUser = async function (req, res) {
     let searchUser = req.body.user;
-    console.log(searchUser);
 
     await User.find({"username" : {$regex : ".*"+ searchUser +".*"}})
         .then(users => {
@@ -60,5 +60,82 @@ exports.searchUser = async function (req, res) {
         })
         .catch(error => {
             res.status(404).json({message: 'Error finding users'})
+        });
+};
+
+exports.addFriend = async function (req, res) {
+    let user = req.body.user;
+    let friend = req.body.friend;
+
+    console.log(friend);
+    let userFound = await User.findOne({
+        _id: ObjectId(user._id)
+    });
+
+    let found = userFound.friends.find(frnd => frnd === friend);
+
+    if (!found) {
+        await User.findOneAndUpdate({
+            _id: ObjectId(user._id)
+        }, {
+            $push: {friends: friend}
+        }, { new: true})
+            .then(user => {
+                if(user) {
+                    res.status(200).json(user);
+                } else {
+                    res.status(404).json({message: 'User not found'})
+                }
+            })
+            .catch(error => {
+                res.status(404).json({message: 'Error adding friend'})
+            });
+    } else {
+        res.status(200).json({message: 'Friend already added'});
+    }
+
+
+};
+
+exports.deleteFriend = async function (req, res) {
+    let user = req.body.user;
+    let friend = req.body.friend;
+    console.log(friend);
+
+    let index = user.friends.findIndex(user => user._id === friend);
+    user.friends.splice(index, 1);
+
+    await User.findOneAndUpdate({
+        _id: ObjectId(user._id)
+    }, {
+        friends: user.friends
+    }, { new: true})
+        .then(user => {
+            if(user) {
+                res.status(200).json(user);
+            } else {
+                res.status(404).json({message: 'User not found'})
+            }
+        })
+        .catch(error => {
+            res.status(404).json({message: 'Error adding friend'})
+        });
+};
+
+exports.getUserFromId = async function (req, res) {
+    let id = req.body.user;
+
+    await User.findOne({
+        _id: ObjectId(id)
+    })
+        .then(user => {
+            if(user) {
+                res.status(200).json(user);
+            } else {
+                res.status(404).json({message: 'User not found'})
+            }
+        })
+        .catch(error => {
+            res.status(404).json({message: 'Error getting user'})
         });
 };

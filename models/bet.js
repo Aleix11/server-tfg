@@ -9,7 +9,8 @@ let bet = mongoose.Schema({
         tokens: Number,
         duration: Number,
         summoner: String,
-        game: String
+        game: String,
+        state: String
     }, {
         collection: 'bet'
     }

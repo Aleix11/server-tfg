@@ -7,7 +7,10 @@ let betScripts = require('../controllers/betScript');
 
 /* POST users listing. */
 router.post('/create', betScripts.createBet);
-
+router.post('/accept', betScripts.acceptBet);
 router.post('/search', betScripts.searchBet);
+
+router.post('/tokens/transfer', betScripts.transferTokens);
+router.post('/tokens/getFromAddress', betScripts.getTokensFromAddress);
 
 module.exports = router;

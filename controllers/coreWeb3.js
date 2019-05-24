@@ -22,6 +22,42 @@ exports.createBet = async function () {
     return await new web3.eth.Contract(JSON.parse(abi));
 };
 
+exports.acceptBet = async function (tokens, from, to) {
+    let abi = fs.readFileSync('./contracts/build/Bet.abi', 'utf8');
+    const myContract = new web3.eth.Contract(JSON.parse(abi), to);
+    console.log(tokens, from, to);
+
+    return await myContract.methods.betOpen(tokens).send({
+      gas: 1500000,
+      gasPrice: '300000000000',
+      from: from,
+    });
+};
+
+exports.transferTokens = async function (contractAddress, tokens, from, to) {
+    let abi = fs.readFileSync('./contracts/build/Bet.abi', 'utf8');
+    const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+
+    return await myContract.methods.transfer(to, tokens).send({
+        gas: 1500000,
+        gasPrice: '300000000000',
+        from: from,
+    });
+};
+
+exports.getTokensOfAddress = async function (contractAddress, address) {
+    let abi = fs.readFileSync('./contracts/build/Bet.abi', 'utf8');
+    const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+
+    console.log('1', myContract.jsonInterface);
+    return await myContract.methods.balanceOf(address).call()
+        .then('then', (result) => {
+            console.log('Result', result);
+    });
+};
+
+
+
 // Compile a contract and get its abi and bytecode
 function abiByteCode() {
     let compiledContract = {};

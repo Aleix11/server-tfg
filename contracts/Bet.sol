@@ -34,7 +34,7 @@ contract Bet is ERC20 {
         @param _amount Quantity of tokens for bet
     */
     function betOpen(uint256 _amount) external {
-        require(balances[msg.sender] >= _amount);
+        // require(balances[msg.sender] >= _amount);
         transfer(address (this), _amount);
         bet.acceptBet(msg.sender, _amount);
         emit BetOpened(block.timestamp);
