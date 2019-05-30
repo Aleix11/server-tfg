@@ -5,6 +5,8 @@ let logger = require('morgan');
 let cookieParser = require('cookie-parser');
 let bodyParser = require('body-parser');
 let mongoose = require('mongoose');
+let timeout = require('connect-timeout'); //express v4
+
 
 let users = require('./routes/userRoutes');
 let games = require('./routes/gameRoutes');
@@ -26,6 +28,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(timeout(120000));
+app.use(haltOnTimedout);
+
+function haltOnTimedout(req, res, next){
+    if (!req.timedout) next();
+}
 
 app.use('/users', users);
 app.use('/games', games);

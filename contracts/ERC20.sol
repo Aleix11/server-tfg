@@ -15,7 +15,7 @@ contract ERC20 is IERC20 {
     constructor() public {
         numTokens = 1000000 * 10**uint(18);
         balances[msg.sender] = numTokens;
-        emit Transfer(address(0), msg.sender, numTokens);
+        emit Transfer(address(0), address(this), numTokens);
     }
 
     // METADATA FUNCTIONS

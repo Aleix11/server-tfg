@@ -9,7 +9,7 @@ const url= 'http://localhost:3000';
 
 
 describe('Transfer Money', () => {
-    let contractAddress = '0xC29b447c8b40B828814c5b1B4b1e574DA5a9b59B';
+    let contractAddress = '0x08d63da8028b28353276284bb60983484c0630c1';
     it('Get Tokens 1', function (done) {
         this.timeout(20000);
         chai.request(url)
@@ -19,24 +19,22 @@ describe('Transfer Money', () => {
                 contractAddress: contractAddress
             })
             .end(function(err,res) {
-                console.log(res);
                 expect(res).to.have.status(200);
                 done();
             });
     });
 
     it('Transfer Tokens', function (done) {
-        this.timeout(20000);
+        this.timeout(200000);
         chai.request(url)
             .post('/bets/tokens/transfer')
             .send({
-                toAddress: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
-                fromAddress: '0xf6530d95CA04FA4C6b3D006777B882f6E7BEe05d',
+                toAddress: '0xe7fE10BAC6a63Ad51712Dc75Cd05414B39B8EAd6',
+                fromAddress: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
                 tokens: 15,
                 contractAddress: contractAddress
             })
             .end(function(err,res) {
-                console.log(res);
                 expect(res).to.have.status(200);
                 done();
             });
@@ -51,7 +49,6 @@ describe('Transfer Money', () => {
                 contractAddress: contractAddress
             })
             .end(function(err,res) {
-                console.log(res);
                 expect(res).to.have.status(200);
                 done();
             });
@@ -61,7 +58,7 @@ describe('Transfer Money', () => {
 
 describe('BET', () => {
     let bet = {
-        summoner: "Slemp",
+        summoner: "MagiFelix",
         game: {},
         teamA: [],
         teamB: [],
@@ -70,7 +67,7 @@ describe('BET', () => {
         duration: 30
     };
 
-    let contractAddress = '';
+    let contractAddress = '0x08d63da8028b28353276284bb60983484c0630c1';
     let betId = '';
 
     it('Search Summoner', function (done) {
@@ -103,25 +100,34 @@ describe('BET', () => {
     });
 
     it('Create Bet', function (done) {
-        this.timeout(20000);
+        this.timeout(200000);
         chai.request(url)
             .post('/bets/create')
             .send({
-                bet: bet
+                bet: bet,
+                address: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
+                contractAddress: contractAddress
             })
             .end( function(err,res) {
-                contractAddress = res.body.contractAddress;
-                betId = res.body.bet._id;
-                done();
+                if(err) {
+                    console.log('error', err);
+                    done();
+                } else {
+                    console.log('result', res.body);
+                    betId = res.body.bet.id;
+                    done();
+                }
             });
     });
 
     it('Accept Bet', function (done) {
+        console.log('betId', betId);
         this.timeout(20000);
         chai.request(url)
             .post('/bets/accept')
             .send({
                 tokens: 30,
+                id: betId,
                 bet: betId,
                 address: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
                 contractAddress: contractAddress
