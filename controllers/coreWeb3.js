@@ -14,13 +14,13 @@ exports.abiInstance = function (abi) {
     return new web3.eth.Contract(JSON.parse(abi));
 };
 
-exports.createBet = async function (tokens, from, to) {
+exports.createBet = async function (tokens, from, contractAddress) {
     return new Promise(async (resolve, reject) => {
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
 
-        const myContract = new web3.eth.Contract(JSON.parse(abi), to);
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
 
-        console.log(tokens, from, to);
+        console.log(tokens, from);
         await myContract.methods.betCreate(tokens).send({
             gas: 1500000,
             gasPrice: '300000000000',
@@ -50,11 +50,11 @@ exports.createBet = async function (tokens, from, to) {
     });
 };
 
-exports.acceptBet = async function (tokens, from, to, id) {
+exports.acceptBet = async function (tokens, from, contractAddress, id) {
     return new Promise(async (resolve, reject) => {
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        const myContract = new web3.eth.Contract(JSON.parse(abi), to);
-        console.log(tokens, from, to, id);
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        console.log(tokens, from, contractAddress, id);
 
         return await myContract.methods.betOpen(tokens, id).send({
             gas: 1500000,

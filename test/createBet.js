@@ -9,8 +9,8 @@ const url= 'http://localhost:3000';
 
 
 describe('Transfer Money', () => {
-    let contractAddress = '0x08d63da8028b28353276284bb60983484c0630c1';
-    it('Get Tokens 1', function (done) {
+    let contractAddress = '0xf75c20acb77ca7cce4975549dfacf7f44e76ce43';
+    it('Get Tokens Owner', function (done) {
         this.timeout(20000);
         chai.request(url)
             .post('/bets/tokens/getFromAddress')
@@ -19,6 +19,7 @@ describe('Transfer Money', () => {
                 contractAddress: contractAddress
             })
             .end(function(err,res) {
+                console.log(res.body);
                 expect(res).to.have.status(200);
                 done();
             });
@@ -31,7 +32,22 @@ describe('Transfer Money', () => {
             .send({
                 toAddress: '0xe7fE10BAC6a63Ad51712Dc75Cd05414B39B8EAd6',
                 fromAddress: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
-                tokens: 15,
+                tokens: 100,
+                contractAddress: contractAddress
+            })
+            .end(function(err,res) {
+                expect(res).to.have.status(200);
+                done();
+            });
+    });
+    it('Transfer Tokens 2', function (done) {
+        this.timeout(200000);
+        chai.request(url)
+            .post('/bets/tokens/transfer')
+            .send({
+                toAddress: '0xf6530d95CA04FA4C6b3D006777B882f6E7BEe05d',
+                fromAddress: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
+                tokens: 100,
                 contractAddress: contractAddress
             })
             .end(function(err,res) {
@@ -40,7 +56,35 @@ describe('Transfer Money', () => {
             });
     });
 
+    it('Get Tokens 1', function (done) {
+        this.timeout(20000);
+        chai.request(url)
+            .post('/bets/tokens/getFromAddress')
+            .send({
+                address: '0xe7fE10BAC6a63Ad51712Dc75Cd05414B39B8EAd6',
+                contractAddress: contractAddress
+            })
+            .end(function(err,res) {
+                console.log(res.body);
+                expect(res).to.have.status(200);
+                done();
+            });
+    });
     it('Get Tokens 2', function (done) {
+        this.timeout(20000);
+        chai.request(url)
+            .post('/bets/tokens/getFromAddress')
+            .send({
+                address: '0xf6530d95CA04FA4C6b3D006777B882f6E7BEe05d',
+                contractAddress: contractAddress
+            })
+            .end(function(err,res) {
+                console.log(res.body);
+                expect(res).to.have.status(200);
+                done();
+            });
+    });
+    it('Get Tokens Owner 2', function (done) {
         this.timeout(20000);
         chai.request(url)
             .post('/bets/tokens/getFromAddress')
@@ -49,6 +93,7 @@ describe('Transfer Money', () => {
                 contractAddress: contractAddress
             })
             .end(function(err,res) {
+                console.log(res.body);
                 expect(res).to.have.status(200);
                 done();
             });
@@ -58,7 +103,7 @@ describe('Transfer Money', () => {
 
 describe('BET', () => {
     let bet = {
-        summoner: "MagiFelix",
+        summoner: "FB Agurin",
         game: {},
         teamA: [],
         teamB: [],
@@ -67,7 +112,7 @@ describe('BET', () => {
         duration: 30
     };
 
-    let contractAddress = '0x08d63da8028b28353276284bb60983484c0630c1';
+    let contractAddress = '0xf75c20acb77ca7cce4975549dfacf7f44e76ce43';
     let betId = '';
 
     it('Search Summoner', function (done) {
@@ -105,11 +150,11 @@ describe('BET', () => {
             .post('/bets/create')
             .send({
                 bet: bet,
-                address: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
+                address: '0xe7fE10BAC6a63Ad51712Dc75Cd05414B39B8EAd6',
                 contractAddress: contractAddress
             })
             .end( function(err,res) {
-                if(err) {
+                if(err || res.body === 'Error') {
                     console.log('error', err);
                     done();
                 } else {
@@ -129,7 +174,7 @@ describe('BET', () => {
                 tokens: 30,
                 id: betId,
                 bet: betId,
-                address: '0xD7938F40cE185a0B4CD82eeD99bB31d0D93c5c54',
+                address: '0xf6530d95CA04FA4C6b3D006777B882f6E7BEe05d',
                 contractAddress: contractAddress
             })
             .end( function(err,res) {
