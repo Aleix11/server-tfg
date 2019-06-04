@@ -147,6 +147,22 @@ exports.getTokensOfAddress = async function (contractAddress, address) {
     });
 };
 
+exports.createWallet = async function () {
+    return new Promise(async (resolve, reject) => {
+        let wallet = web3.eth.accounts.wallet.create(1);
+
+        resolve(wallet);
+    });
+};
+
+exports.loadWallet = async function () {
+    return new Promise(async (resolve, reject) => {
+        let wallet = web3.eth.accounts.wallet.create(1);
+
+        resolve(wallet);
+    });
+};
+
 
 
 // Compile a contract and get its abi and bytecode

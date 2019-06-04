@@ -7,7 +7,8 @@ let Bet = mongoose.model('Bet');
 let ObjectId = require('mongodb').ObjectID;
 
 exports.createBet = async function (req, res) {
-    let contractAddress = req.body.contractAddress;
+    // let contractAddress = req.body.contractAddress;
+    let contractAddress = "0xf75c20acb77ca7cce4975549dfacf7f44e76ce43";
     let from = req.body.address;
     let tokens = req.body.bet.tokens;
     let duration = req.body.bet.duration;

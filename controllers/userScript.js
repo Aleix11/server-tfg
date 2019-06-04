@@ -7,6 +7,7 @@ let jwt = require('./jwt');
 let mongoose = require('mongoose');
 let User = mongoose.model('User');
 let ObjectId = require('mongodb').ObjectID;
+let coreWeb3 = require('./coreWeb3');
 
 exports.login = async function (req, res) {
     let user = req.body;
@@ -28,9 +29,10 @@ exports.login = async function (req, res) {
 };
 
 exports.register = async function (req, res) {
-    await bcrypt.hash(req.body.password, null, null, async function (err, hash) {
+    let usr = req.body;
+    await bcrypt.hash(usr.password, null, null, async function (err, hash) {
 
-        let newUser = new User(req.body);
+        let newUser = new User(usr);
         newUser.password = hash;
 
         delete newUser.token;
@@ -138,4 +140,34 @@ exports.getUserFromId = async function (req, res) {
         .catch(error => {
             res.status(404).json({message: 'Error getting user'})
         });
+};
+
+exports.createWallet = async function (req, res) {
+    let user = req.body;
+
+    let wallet = await coreWeb3.createWallet();
+    console.log(wallet['0']);
+
+    await User.findOneAndUpdate({
+        _id: ObjectId(user._id)
+    }, {
+        address: wallet['0'].address,
+        privateKey: wallet['0'].privateKey
+    }, { new: true }).then(usr => {
+        if(usr && usr.address && usr.privateKey) {
+            res.status(200).json(usr);
+        } else {
+            res.status(404).json({message: 'Error updating user'})
+        }
+    }, err => {
+        res.status(404).json({message: 'Error updating user'})
+    });
+};
+
+exports.loadWallet = async function (req, res) {
+    let user = req.body.user;
+
+    let wallet = await coreWeb3.createWallet();
+    console.log(wallet['0']);
+    user.address = wallet['0'].address;
 };

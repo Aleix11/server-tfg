@@ -15,6 +15,15 @@ let summoners = require('./routes/summonerRoutes');
 
 let app = express();
 
+
+let allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+
+    next();
+};
+
 require('./controllers/initWeb3');
 
 // view engine setup
@@ -27,6 +36,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(allowCrossDomain);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(timeout(120000));
@@ -62,15 +72,51 @@ app.use(function(err, req, res, next) {
 
 // Database
 // noinspection JSIgnoredPromiseFromCall
-mongoose.connect("mongodb://localhost:27017/tfg", function (err, db) {
-    if (err) {
-        console.error('Database Error: ' + err);
-    } else {
-        console.log("Database connected...");
-        module.exports.db = db;
-        app.set('connects', db);
-    }
+mongoose.connect("mongodb://localhost:27017/tfg",{
+    useNewUrlParser: true,
+    reconnectTries : Number.MAX_VALUE,
+    autoReconnect : true,
+    reconnectInterval: 500
 });
+
+// When successfully connected
+mongoose.connection.on('connected', () => {
+    console.log('dbevent: open');
+});
+
+// When successfully reconnected
+mongoose.connection.on('reconnected', () => {
+    console.log('dbevent: reconnected');
+});
+
+// If the connection throws an error
+mongoose.connection.on('error', (err) => {
+    console.log(`dbevent: error: ${err}`);
+});
+
+// When the connection is disconnected
+mongoose.connection.on('disconnected', () => {
+    console.log('dbevent: disconnected');
+    mongoose.connect("mongodb://localhost:27017/tfg",{
+        useNewUrlParser: true,
+        reconnectTries : Number.MAX_VALUE,
+        autoReconnect : true,
+        reconnectInterval: 500
+    });
+});
+
+
+// Database
+// noinspection JSIgnoredPromiseFromCall
+// mongoose.connect("mongodb://localhost:27017/tfg", function (err, db) {
+//     if (err) {
+//         console.error('Database Error: ' + err);
+//     } else {
+//         console.log("Database connected...");
+//         module.exports.db = db;
+//         app.set('connects', db);
+//     }
+// });
 
 app.listen(3000);
 

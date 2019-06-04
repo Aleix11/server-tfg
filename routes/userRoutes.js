@@ -8,6 +8,8 @@ let userScripts = require('../controllers/userScript');
 /* POST users listing. */
 router.post('/login', userScripts.login);
 router.post('/register', userScripts.register);
+router.post('/createWallet', userScripts.createWallet);
+router.post('/loadWallet', userScripts.loadWallet);
 
 router.post('/getUserFromId', userScripts.getUserFromId);
 
