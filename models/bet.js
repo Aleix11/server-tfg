@@ -11,7 +11,11 @@ let bet = mongoose.Schema({
         summoner: String,
         game: String,
         state: String,
-        id: Number
+        id: Number,
+        bettor1: String,
+        bettor2: String,
+        addressBettor1: String,
+        addressBettor2: String
     }, {
         collection: 'bet'
     }

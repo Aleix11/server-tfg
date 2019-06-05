@@ -102,3 +102,7 @@ exports.getTokensFromAddress = async function (req, res) {
     console.log(tokens);
     res.status(200).json(tokens);
 };
+
+exports.getPendingBets = async function (req, res) {
+
+};

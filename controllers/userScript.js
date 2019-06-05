@@ -69,7 +69,6 @@ exports.addFriend = async function (req, res) {
     let user = req.body.user;
     let friend = req.body.friend;
 
-    console.log(friend);
     let userFound = await User.findOne({
         _id: ObjectId(user._id)
     });
@@ -102,9 +101,8 @@ exports.addFriend = async function (req, res) {
 exports.deleteFriend = async function (req, res) {
     let user = req.body.user;
     let friend = req.body.friend;
-    console.log(friend);
 
-    let index = user.friends.findIndex(user => user._id === friend);
+    let index = user.friends.findIndex(user => user === friend);
     user.friends.splice(index, 1);
 
     await User.findOneAndUpdate({
