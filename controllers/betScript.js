@@ -4,30 +4,36 @@ require('../models/bet');
 let coreWeb3 = require('./coreWeb3');
 let mongoose = require('mongoose');
 let Bet = mongoose.model('Bet');
+let Game = mongoose.model('Game');
+let User = mongoose.model('User');
 let ObjectId = require('mongodb').ObjectID;
+
+let summonerScripts = require('../controllers/summonerScript');
+
+
+let owner = "0x4f6df75c9d42f1cfe4ec4ae827bb1e4a997691fe";
+let contractAddress = "0xf367ab68ab2f69e317d82082fdc9f9435ad31fbc";
 
 exports.createBet = async function (req, res) {
     // let contractAddress = req.body.contractAddress;
-    let contractAddress = "0xf75c20acb77ca7cce4975549dfacf7f44e76ce43";
-    let from = req.body.address;
-    let tokens = req.body.bet.tokens;
-    let duration = req.body.bet.duration;
+    // let contractAddress = "0xf367ab68ab2f69e317d82082fdc9f9435ad31fbc";
+    let bet = req.body.bet;
 
     let data = '0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610314806100606000396000f3fe608060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100b85780638da5cb5b146100e3578063fdacd5761461013a575b600080fd5b34801561007357600080fd5b506100b66004803603602081101561008a57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610175565b005b3480156100c457600080fd5b506100cd61025d565b6040518082815260200191505060405180910390f35b3480156100ef57600080fd5b506100f8610263565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561014657600080fd5b506101736004803603602081101561015d57600080fd5b8101908080359060200190929190505050610288565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141561025a5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b15801561024057600080fd5b505af1158015610254573d6000803e3d6000fd5b50505050505b50565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102e557806001819055505b5056fea165627a7a72305820a36a8a0408882fafef89f8454eefcf771313469ed11255fb37f329cf5aeb75b30029';
     // let data = '0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610314806100606000396000f3fe608060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100b85780638da5cb5b146100e3578063fdacd5761461013a575b600080fd5b34801561007357600080fd5b506100b66004803603602081101561008a57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610175565b005b3480156100c457600080fd5b506100cd61025d565b6040518082815260200191505060405180910390f35b3480156100ef57600080fd5b506100f8610263565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561014657600080fd5b506101736004803603602081101561015d57600080fd5b8101908080359060200190929190505050610288565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141561025a5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b15801561024057600080fd5b505af1158015610254573d6000803e3d6000fd5b50505050505b50565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102e557806001819055505b5056fea165627a7a72305820a36a8a0408882fafef89f8454eefcf771313469ed11255fb37f329cf5aeb75b30029';
 
-    let betId = await coreWeb3.createBet(tokens, from, contractAddress);
+    let betId = await coreWeb3.createBet(bet.tokens, bet.addressBettor1, contractAddress);
 
     if(betId && betId.error) {
         res.status(400).json('Error');
     } else {
         let now = Date.now();
-
-        let newBet = new Bet({
-            duration: now + duration * 60 * 1000,
-            state: 'pending',
-            id: betId - 1
-        });
+        bet.duration = Math.floor(now/1000) + bet.duration * 60;
+        bet.id = betId - 1;
+        bet.state = 'pending';
+        bet.timestampBettor1 = Math.floor(Date.now()/1000);
+        console.log(bet);
+        let newBet = new Bet(bet);
         await newBet.save()
             .then(async bet => {
                 console.log('id', bet.id);
@@ -56,25 +62,74 @@ exports.searchBet = async function (req, res) {
 };
 
 exports.acceptBet = async function (req, res) {
-    let contractAddress = req.body.contractAddress;
-    let from = req.body.address;
-    let tokens = req.body.tokens;
-    let betId = req.body.bet;
+    let bet = req.body.bet;
+    console.log(bet);
+    if(bet.addressBettor1 !== bet.addressBettor2 && bet.bettor1 !== bet.bettor2) {
+        let tx = await coreWeb3.acceptBet(bet.tokens, bet.addressBettor2, contractAddress, bet.id);
 
-    let tx = await coreWeb3.acceptBet(tokens, from, contractAddress, betId);
+        await Bet.findOneAndUpdate({
+            _id: ObjectId(bet._id)
+        }, {
+            state: 'open',
+            bettor2: bet.bettor2,
+            timestampBettor2: Math.floor(Date.now()/1000),
+            teamBettor2: bet.teamBettor2,
+            addressBettor2: bet.addressBettor2
+        }, { new: true }).then(async bet => {
+            res.status(200).json({
+                bet: bet,
+            });
+        }).catch(error => console.log(error));
+    } else {
+        res.status(404).json({error: 'Bettor2 is the same as Bettor1 '})
+    }
+};
 
-    let now = Date.now();
+exports.closeBet = async function (bet, winner) {
+    console.log(bet);
+
+    await coreWeb3.closeBet(winner, bet.tokens, owner, contractAddress, bet.id);
+
     await Bet.findOneAndUpdate({
-        _id: ObjectId(betId)
+        _id: ObjectId(bet._id)
     }, {
-        state: 'open'
-    }, { new: true }).then(async bet => {
-        res.status(200).json({
-            bet: bet,
-        });
+        state: 'close',
+    }, { new: true }).then(bet => {
+        return bet;
+    })
+    .catch(error => console.log(error));
+};
+
+async function closeBetPending(bet) {
+    console.log(bet);
+
+    await coreWeb3.closeBetFromPending(bet.addressBettor1, bet.tokens, owner, contractAddress, bet.id);
+
+    await Bet.findOneAndUpdate({
+        _id: ObjectId(bet._id)
+    }, {
+        state: 'close',
+        winner: 'no'
+    }, { new: true }).then(bet => {
+        console.log(bet._id, bet.state);
+        return bet;
     })
         .catch(error => console.log(error));
+}
 
+exports.closeBetRemake = async function (bet) {
+    console.log(bet);
+
+    await coreWeb3.closeBetRemake(bet.addressBettor1, bet.addressBettor2, bet.tokens, owner, contractAddress, bet.id);
+
+    await Bet.findOneAndUpdate({
+        _id: ObjectId(bet._id)
+    }, {
+        state: 'close',
+    }, { new: true }).then(bet => {
+        return bet;
+    })
+        .catch(error => console.log(error));
 };
 
 exports.transferTokens = async function (req, res) {
@@ -104,5 +159,386 @@ exports.getTokensFromAddress = async function (req, res) {
 };
 
 exports.getPendingBets = async function (req, res) {
-
+    let filters = req.body;
+    console.log(filters.maxDuration * 60 + Math.floor(Date.now()/1000), filters.minDuration * 60 + Math.floor(Date.now()/1000), filters.maxTokens, filters.minTokens);
+    await Bet.find({
+        state: 'pending',
+        tokens: {
+            $lte: filters.maxTokens,
+            $gte: filters.minTokens,
+        },
+        duration: {
+            $lte: filters.maxDuration * 60 + Math.floor(Date.now()/1000),
+            $gte: filters.minDuration * 60 + Math.floor(Date.now()/1000),
+        },
+        summoner : {$regex : ".*"+ filters.summoner +".*"},
+        bettor1 : {$regex : ".*"+ filters.username +".*"}
+    }).then(async bets => {
+        console.log(bets);
+        res.status(200).json(bets);
+    })
+    .catch(error => console.log(error));
 };
+
+exports.getBet = async function (req, res) {
+  let id = req.body.id;
+
+  await Bet.findOne({
+      _id: ObjectId(id)
+  }).then(async bet => {
+      await Game.findOne({
+          _id: ObjectId(bet.gameId)
+      }).then(async game => {
+          let response = {
+              bet: bet,
+              game: game
+          };
+          console.log(response);
+          res.status(200).json(response);
+      })
+      .catch(error => console.log(error));
+  })
+  .catch(error => console.log(error));
+};
+
+exports.getBetsFromUser = async function (req, res) {
+    let user = req.body.user;
+    await Bet.find({
+        bettor1: user,
+        state: 'close',
+        winner: { $in: ['bettor1', 'bettor2'] }
+    }).then(async bts1 => {
+        console.log(bts1);
+        await Bet.find({
+            bettor1: user,
+            state: 'close',
+            winner: { $in: ['bettor1', 'bettor2'] }
+        }).then(async bts2 => {
+            console.log(bts2);
+            bts1 = bts1.concat(bts2);
+            res.status(200).json(bts1);
+        }).catch(error => console.log(error));
+    }).catch(error => console.log(error));
+};
+
+exports.cronFunction = function () {
+     checkPendingBets();
+     checkOpenBets();
+     checkCloseBets();
+};
+
+async function checkOpenBets() {
+    let now = Math.floor(Date.now()/1000);
+    await Bet.find({
+        state: 'open',
+    }).then(bets => {
+        bets.forEach(async bet => {
+            await Game.findOne({
+                _id: ObjectId(bet.gameId)
+            }).then(async game => {
+                console.log(now, bet.duration, Math.floor(game.gameStartTime/1000) + 15*60, now > Math.floor(game.gameStartTime/1000) + 15*60, +game.gameId, bet.duration > now);
+                if(now > (Math.floor(game.gameStartTime/1000) + 15*60)) {
+                    if(bet.duration > now) {
+                        // Request to see if game is finished
+                        // attack lol api to know if game finish
+                        let gameUpdated = summonerScripts.getMatch(game);
+                        if(gameUpdated.mode = 1 && gameUpdated.game && gameUpdated.game.winner && gameUpdated.game.winner !== '') {
+                            await Game.findOneAndUpdate({
+                                _id: ObjectId(gameUpdated.game._id)
+                            }, {
+                                winner: gameUpdated.game.winner
+                            }, {new:true} ).then(gamee => console.log('game', gamee));
+
+                            let winner, addressWinner;
+                            if(gameUpdated.game.winner === bet.teamBettor1) {
+                                winner = 'bettor1';
+                                addressWinner = bet.addressBettor1;
+                            } else if(gameUpdated.game.winner === bet.teamBettor1) {
+                                winner = 'bettor2';
+                                addressWinner = bet.addressBettor2;
+                            }
+                            await coreWeb3.closeBet(addressWinner, bet.tokens, owner, contractAddress, bet.id);
+
+                            await Bet.findOneAndUpdate({
+                                _id: ObjectId(bet._id)
+                            }, {
+                                state: 'close',
+                                winner: winner
+                            }, { new: true }).then(beet => console.log('beet: ', beet));
+                            stats(bet.bettor1);
+                            stats(bet.bettor2);
+                        } else if(gameUpdated.mode = 2) {
+                            await Bet.findOneAndUpdate({
+                                _id: bet._id
+                            }, {
+                                state: 'close'
+                            }).then(beet => console.log(beet));
+                        }
+                    } else {
+                        // Request to see if game is finished
+                        // Close bet
+                        let gameUpdated = await summonerScripts.getMatch(game);
+                        if(gameUpdated.mode = 1 && gameUpdated.game && gameUpdated.game.winner && gameUpdated.game.winner !== '') {
+                            await Game.findOneAndUpdate({
+                                _id: ObjectId(gameUpdated.game._id)
+                            }, {
+                                winner: gameUpdated.game.winner
+                            }).then(gamee => console.log('game: ', gamee));
+
+                            let winner, addressWinner;
+                            if(gameUpdated.game.winner === bet.teamBettor1) {
+                                winner = 'bettor1';
+                                addressWinner = bet.addressBettor1;
+                            } else if(gameUpdated.game.winner === bet.teamBettor1) {
+                                winner = 'bettor2';
+                                addressWinner = bet.addressBettor2;
+                            }
+                            console.log('winner: ', addressWinner, gameUpdated.winner, bet.addressBettor1, bet.addressBettor2);
+                            await coreWeb3.closeBet(addressWinner, bet.tokens, owner, contractAddress, bet.id);
+
+                            console.log(bet._id, winner);
+                            await Bet.findOneAndUpdate({
+                                _id: ObjectId(bet._id)
+                            }, {
+                                state: 'close',
+                                winner: winner
+                            }).then(beet => console.log('beet: ',beet));
+                            stats(bet.bettor1);
+                            stats(bet.bettor2);
+                        } else if(gameUpdated.mode = 2) {
+                            await Bet.findOneAndUpdate({
+                                _id: ObjectId(bet._id),
+                                winner: 'no'
+                            }, {
+                                state: 'close'
+                            }).then(beet => console.log(beet));
+                        }
+                    }
+                }
+            })
+        });
+    });
+}
+
+async function checkPendingBets() {
+    let now = Math.floor(Date.now()/1000);
+    await Bet.find({
+        state: 'pending',
+        duration: { $lt: now },
+    }).then(bets => {
+        bets.forEach(bet => {
+            console.log(now, bet.duration);
+
+            closeBetPending(bet);
+        });
+    });
+}
+
+async function checkCloseBets() {
+    let now = Math.floor(Date.now()/1000);
+    await Bet.find({
+        state: 'close',
+        winner: { $nin: ['bettor1', 'bettor2', 'no'] }
+    }).then(bets => {
+        console.log('close bets', bets);
+        bets.forEach(async bet => {
+            // closeBetWithoutWinner(bet);
+            let now = Math.floor(Date.now()/1000);
+
+            await Game.findOne({
+                _id: ObjectId(bet.gameId)
+            }).then(async game => {
+                // attack lol api to know if game finish
+                let gameUpdated = await summonerScripts.getMatch(game);
+
+                if(gameUpdated.mode !== 3) {
+                    console.log('mode', gameUpdated.mode, gameUpdated.game._id, gameUpdated.game.winner);
+                } else {
+                    console.log('mode', gameUpdated.mode);
+                }
+                if(gameUpdated.mode = 1 && gameUpdated.game && gameUpdated.game.winner && gameUpdated.game.winner !== '') {
+                    await Game.findOneAndUpdate({
+                        _id: ObjectId(gameUpdated.game._id)
+                    }, {
+                        winner: gameUpdated.game.winner
+                    }).then(gamee => console.log('game', game._id));
+
+                    let winner, addressWinner;
+                    if(gameUpdated.game.winner === bet.teamBettor1) {
+                        winner = 'bettor1';
+                        addressWinner = bet.addressBettor1;
+
+                    } else if(gameUpdated.game.winner === bet.teamBettor2) {
+                        winner = 'bettor2';
+                        addressWinner = bet.addressBettor2;
+                    }
+
+                    await coreWeb3.closeBet(addressWinner, bet.tokens, owner, contractAddress, bet.id);
+
+                    console.log('winner: ', winner, gameUpdated.game.winner, bet.teamBettor1, bet.teamBettor2);
+                    await Bet.findOneAndUpdate({
+                        _id: ObjectId(bet._id)
+                    }, {
+                        state: 'close',
+                        winner: winner
+                    }).then(beet => {
+                        if(beet) {
+                            console.log(1, beet._id)
+                        } else {
+                            console.log(1, null)
+                        }
+                    });
+                    stats(bet.bettor1);
+                    stats(bet.bettor2);
+                } else if(gameUpdated.mode = 2) {
+                    await Bet.findOneAndUpdate({
+                        _id: bet._id
+                    }, {
+                        state: 'close'
+                    }).then(beet => {
+                        if(beet) {
+                            console.log(1, beet._id)
+                        } else {
+                            console.log(1, null)
+                        }
+                    });
+                }
+            })
+        });
+    });
+}
+
+async function stats(user) {
+    await Bet.find({
+        bettor1: user
+    }).then(async bets1 => {
+        await Bet.find({
+            bettor2: user
+        }).then(async bets2 => {
+            bets1 = bets1.concat(bets2);
+            let wins = 0;
+            let losses = 0;
+            let win = [];
+            let loss = [];
+            let bets = [];
+
+            bets1.forEach(async (bet, index) => {
+                if(bet.winner === 'bettor1') {
+                    if(bet.bettor1 === user) {
+                        wins++;
+                        let bt = win.findIndex(wn => wn.vs === bet.bettor2);
+                        if(bt !== -1) {
+                            win[bt].quantity++;
+                        } else {
+                            win.push({
+                                vs: bet.bettor2,
+                                quantity: 1
+                            })
+                        }
+                        let bts = bets.findIndex(bt => bt.vs === bet.bettor2);
+                        if(bts !== -1) {
+                            bets[bts].quantity++;
+                        } else {
+                            bets.push({
+                                vs: bet.bettor2,
+                                quantity: 1
+                            })
+                        }
+                    } else {
+                        losses++;
+                        let bt = loss.findIndex(lss => lss.vs === bet.bettor1);
+                        if(bt !== -1) {
+                            loss[bt].quantity++;
+                        } else {
+                            loss.push({
+                                vs: bet.bettor1,
+                                quantity: 1
+                            })
+                        }
+                        let bts = bets.findIndex(bt => bt.vs === bet.bettor1);
+                        if(bts !== -1) {
+                            bets[bts].quantity++;
+                        } else {
+                            bets.push({
+                                vs: bet.bettor1,
+                                quantity: 1
+                            })
+                        }
+                    }
+                } else if(bet.winner === 'bettor2') {
+                    if(bet.bettor2 === user) {
+                        wins++;
+                        let bt = win.findIndex(win => win.vs === bet.bettor1);
+                        if(bt !== -1) {
+                            win[bt].quantity++;
+                        } else {
+                            win.push({
+                                vs: bet.bettor1,
+                                quantity: 1
+                            })
+                        }
+                        let bts = bets.findIndex(bt => bt.vs === bet.bettor1);
+                        if(bts !== -1) {
+                            bets[bts].quantity++;
+                        } else {
+                            bets.push({
+                                vs: bet.bettor1,
+                                quantity: 1
+                            })
+                        }
+                    } else {
+                        losses++;
+                        let bt = loss.findIndex(lss => lss.vs === bet.bettor2);
+                        if(bt !== -1) {
+                            loss[bt].quantity++;
+                        } else {
+                            loss.push({
+                                vs: bet.bettor2,
+                                quantity: 1
+                            })
+                        }
+                        let bts = bets.findIndex(bt => bt.vs === bet.bettor2);
+                        if(bts !== -1) {
+                            bets[bts].quantity++;
+                        } else {
+                            bets.push({
+                                vs: bet.bettor2,
+                                quantity: 1
+                            })
+                        }
+                    }
+                }
+
+                if(index === bets1.length - 1) {
+                    win.sort(function (a, b) {
+                       if(a.quantity < b.quantity) return -1;
+                       if(a.quantity > b.quantity) return 1;
+                       return 0;
+                    });
+                    loss.sort(function (a, b) {
+                        if(a.quantity < b.quantity) return -1;
+                        if(a.quantity > b.quantity) return 1;
+                        return 0;
+                    });
+                    bets.sort(function (a, b) {
+                        if(a.quantity < b.quantity) return -1;
+                        if(a.quantity > b.quantity) return 1;
+                        return 0;
+                    });
+                    console.log('aaaa', win, loss, bets);
+                    await User.findOneAndUpdate({
+                        username: user
+                    }, {
+                        "stats.total": bets1.length,
+                        "stats.losses": losses,
+                        "stats.wins": wins,
+                        "stats.ratioWinLose": wins/losses,
+                        "stats.userMostBets": bets[0].vs,
+                        "stats.youAreNemesisOf": win[0].vs,
+                        "stats.yourNemesisIs": loss[0].vs
+                    }, {new:true});
+                }
+            });
+        });
+    });
+}

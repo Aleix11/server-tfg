@@ -10,6 +10,8 @@ router.post('/create', betScripts.createBet);
 router.post('/accept', betScripts.acceptBet);
 router.post('/search', betScripts.searchBet);
 router.post('/pendingBets', betScripts.getPendingBets);
+router.post('/getBet', betScripts.getBet);
+router.post('/getBetsFromUser', betScripts.getBetsFromUser);
 
 router.post('/tokens/transfer', betScripts.transferTokens);
 router.post('/tokens/getFromAddress', betScripts.getTokensFromAddress);

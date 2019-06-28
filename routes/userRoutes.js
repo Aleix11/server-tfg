@@ -12,6 +12,9 @@ router.post('/createWallet', userScripts.createWallet);
 router.post('/loadWallet', userScripts.loadWallet);
 
 router.post('/getUserFromId', userScripts.getUserFromId);
+router.post('/getUserFromUsername', userScripts.getUserFromUsername);
+router.post('/editUser', userScripts.editUser);
+router.post('/editFavouriteSummoner', userScripts.editFavouriteSummoner);
 
 router.post('/search', userScripts.searchUser);
 

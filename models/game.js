@@ -7,6 +7,7 @@ let game = mongoose.Schema({
         gameStartTime: Number,
         gameMode: String,
         region: String,
+        winner: String,
         participants: [{
             encryptedSummonerId: String,
             summonerName: String,

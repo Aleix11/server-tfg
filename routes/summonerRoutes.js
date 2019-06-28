@@ -8,6 +8,7 @@ let summonerScripts = require('../controllers/summonerScript');
 
 /* POST users listing. */
 router.post('/searchSummoner', summonerScripts.searchSummonerBet);
+router.post('/searchSummonerInfo', summonerScripts.searchSummonerInfo);
 
 
 module.exports = router;

@@ -33,13 +33,13 @@ exports.createBet = async function (tokens, from, contractAddress) {
                 console.log('transactionHash', transactionHash);
             })
             .on('receipt', async (receipt) => {
-                console.log('receipt');
+                console.log('receipt', receipt);
             })
             .on('confirmation', (confirmationNumber, receipt) => {
                 console.log('confirmation', confirmationNumber, receipt)
             })
             .then((newContractInstance) => {
-                console.log('contractInstance', newContractInstance.events); // instance with the new contract address
+                console.log('contractInstance', newContractInstance); // instance with the new contract address
                 if(newContractInstance && newContractInstance.events) {
                     console.log(newContractInstance.events.BetPending.returnValues.id);
                     resolve(newContractInstance.events.BetPending.returnValues.id);
@@ -56,7 +56,7 @@ exports.acceptBet = async function (tokens, from, contractAddress, id) {
         const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
         console.log(tokens, from, contractAddress, id);
 
-        return await myContract.methods.betOpen(tokens, id).send({
+        await myContract.methods.betOpen(tokens, id).send({
             gas: 1500000,
             gasPrice: '300000000000',
             from: from,
@@ -76,6 +76,93 @@ exports.acceptBet = async function (tokens, from, contractAddress, id) {
             console.log(newContractInstance); // instance with the new contract address
             resolve(newContractInstance);
         });
+    });
+};
+
+exports.closeBet = async function (winner, tokens, from, contractAddress, id) {
+    return new Promise(async (resolve, reject) => {
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        console.log(winner, tokens, from, contractAddress, id);
+
+        await myContract.methods.betClose(winner, tokens, id).send({
+            gas: 1500000,
+            gasPrice: '300000000000',
+            from: from,
+        }).on('error', (error) => {
+            console.log('error', error);
+        })
+            .on('transactionHash', (transactionHash) => {
+                console.log('transactionHash', transactionHash);
+            })
+            .on('receipt', async (receipt) => {
+                console.log('receipt'); // contains the new contract address
+            })
+            .on('confirmation', (confirmationNumber, receipt) => {
+                console.log(confirmationNumber, receipt)
+            })
+            .then((newContractInstance) => {
+                console.log('contract instance', newContractInstance); // instance with the new contract address
+                resolve(newContractInstance);
+            });
+    });
+};
+
+exports.closeBetFromPending = async function (bettor1, tokens, from, contractAddress, id) {
+    return new Promise(async (resolve, reject) => {
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        console.log(bettor1, tokens, from, contractAddress, id);
+
+        await myContract.methods.betCloseFromPending(bettor1, tokens, id).send({
+            gas: 1500000,
+            gasPrice: '300000000000',
+            from: from,
+        }).on('error', (error) => {
+            console.log('error', error);
+        })
+        .on('transactionHash', (transactionHash) => {
+            console.log('transactionHash', transactionHash);
+        })
+        .on('receipt', async (receipt) => {
+            console.log('receipt'); // contains the new contract address
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+            console.log(confirmationNumber, receipt)
+        })
+        .then((newContractInstance) => {
+            console.log(newContractInstance); // instance with the new contract address
+            resolve(newContractInstance);
+        });
+    });
+};
+
+exports.closeBetRemake = async function (bettor1, bettor2, tokens, from, contractAddress, id) {
+    return new Promise(async (resolve, reject) => {
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        console.log(bettor1, tokens, from, contractAddress, id);
+
+        await myContract.methods.betCloseRemake(bettor1, bettor2, tokens, id).send({
+            gas: 1500000,
+            gasPrice: '300000000000',
+            from: from,
+        }).on('error', (error) => {
+            console.log('error', error);
+        })
+            .on('transactionHash', (transactionHash) => {
+                console.log('transactionHash', transactionHash);
+            })
+            .on('receipt', async (receipt) => {
+                console.log('receipt'); // contains the new contract address
+            })
+            .on('confirmation', (confirmationNumber, receipt) => {
+                console.log(confirmationNumber, receipt)
+            })
+            .then((newContractInstance) => {
+                console.log(newContractInstance); // instance with the new contract address
+                resolve(newContractInstance);
+            });
     });
 };
 

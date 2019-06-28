@@ -122,6 +122,39 @@ exports.deleteFriend = async function (req, res) {
         });
 };
 
+exports.editUser = async function (req, res) {
+    let user = req.body.user;
+
+    await User.findOneAndUpdate({
+        _id: ObjectId(user._id)
+    }, {
+        email: user.email,
+        profilePhoto: user.profilePhoto
+    }, {new: true}).then(user => {
+       if(user) {
+           res.status(200).json(user)
+       }
+    }).catch(error => {
+        res.status(404).json({message: 'Error editing user'})
+    });
+};
+
+exports.editFavouriteSummoner = async function (req, res) {
+    let user = req.body.user;
+
+    await User.findOneAndUpdate({
+        _id: ObjectId(user._id)
+    }, {
+        summoners: user.summoners
+    }, {new: true}).then(user => {
+        if(user) {
+            res.status(200).json(user)
+        }
+    }).catch(error => {
+        res.status(404).json({message: 'Error editing user'})
+    });
+};
+
 exports.getUserFromId = async function (req, res) {
     let id = req.body.user;
 
@@ -138,6 +171,24 @@ exports.getUserFromId = async function (req, res) {
         .catch(error => {
             res.status(404).json({message: 'Error getting user'})
         });
+};
+
+exports.getUserFromUsername = async function (req, res) {
+    let user = req.body.user;
+
+    await User.findOne({
+        username: user
+    })
+    .then(user => {
+        if(user) {
+            res.status(200).json(user);
+        } else {
+            res.status(404).json({message: 'User not found'})
+        }
+    })
+    .catch(error => {
+        res.status(404).json({message: 'Error getting user'})
+    });
 };
 
 exports.createWallet = async function (req, res) {

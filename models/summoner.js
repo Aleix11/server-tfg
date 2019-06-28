@@ -4,7 +4,8 @@ let mongoose = require('mongoose');
 
 let summoner = mongoose.Schema({
         summonerName: String,
-        encryptedSummonerId: String
+        encryptedSummonerId: String,
+        summonerLevel: Number
     }, {
         collection: 'summoner'
     }

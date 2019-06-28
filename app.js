@@ -6,15 +6,25 @@ let cookieParser = require('cookie-parser');
 let bodyParser = require('body-parser');
 let mongoose = require('mongoose');
 let timeout = require('connect-timeout'); //express v4
-
+let CronJob = require('cron').CronJob;
 
 let users = require('./routes/userRoutes');
+let chats = require('./routes/chatRoutes');
 let games = require('./routes/gameRoutes');
 let bets = require('./routes/betRoutes');
 let summoners = require('./routes/summonerRoutes');
+let betScripts = require('./controllers/betScript');
 
 let app = express();
+let http = require('http').Server(app);
+let io = require('socket.io')(http);
 
+require('./models/chat');
+require('./models/message');
+require('./models/user');
+let Chat = mongoose.model('Chat');
+let Message = mongoose.model('Message');
+let User = mongoose.model('User');
 
 let allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', "*");
@@ -50,6 +60,7 @@ app.use('/users', users);
 app.use('/games', games);
 app.use('/bets', bets);
 app.use('/summoners', summoners);
+app.use('/chats', chats);
 
 
 // catch 404 and forward to error handler
@@ -105,18 +116,103 @@ mongoose.connection.on('disconnected', () => {
     });
 });
 
+const job = new CronJob('0 */1 * * * *', function() {
+    const d = new Date();
+    console.log('At 2 Minutes:', d);
+    betScripts.cronFunction();
+});
+job.start();
 
-// Database
-// noinspection JSIgnoredPromiseFromCall
-// mongoose.connect("mongodb://localhost:27017/tfg", function (err, db) {
-//     if (err) {
-//         console.error('Database Error: ' + err);
-//     } else {
-//         console.log("Database connected...");
-//         module.exports.db = db;
-//         app.set('connects', db);
-//     }
-// });
+io.on('connection', (socket) => {
+    socket.on('subscribe', async function(users) {
+        console.log(users);
+        let room;
+        if(users && users.userFrom && users.userTo){
+            if(users.userFrom.username && users.userTo.username) {
+                if (users.userFrom.username.toLowerCase() < users.userTo.username.toLowerCase()) {
+                    room = "" + users.userFrom._id + "" + users.userTo._id;
+                } else {
+                    room = "" + users.userTo._id + "" + users.userFrom._id;
+                }
+            }
+            let checkChat = await Chat.findOne({ room: room });
+            if(checkChat) {
+                checkChat.users.find(user => {
+                    if(user.userId === users.userFrom._id) {
+                        user.lastView = Date.now();
+                    }
+                });
+                await Chat.findOneAndUpdate({ room: room }, checkChat);
+
+                console.log('joining room', room);
+                socket.join(room);
+            } else {
+                let newChat = new Chat();
+                newChat.room = room;
+                newChat.created = Date.now();
+                newChat.users.push({
+                    userId: users.userFrom._id,
+                    userName: users.userFrom.username,
+                    userConnected: users.userFrom.connected,
+                    lastView: Date.now()
+                });
+                newChat.users.push({
+                    userId: users.userTo._id,
+                    userName: users.userTo.username,
+                    userConnected: users.userTo.connected,
+                    lastView: null
+                });
+                await newChat.save();
+
+                console.log('joining room', room);
+                socket.join(room);
+            }
+        }
+    });
+
+    socket.on('disconnect', async function (username) {
+        await User.findOneAndUpdate({name: username}, {connected: false}, {new: true});
+        socket.emit('user-changed', {
+            user: socket.username,
+            event: 'left'
+        })
+    });
+
+    socket.on('set-username', async (username) => {
+        socket.username = username;
+        await User.findOneAndUpdate({name: username}, {connected: true}, {new: true});
+        socket.emit('users-changed', {
+            user: username,
+            event: 'joined'
+        });
+    });
+
+    socket.on('add-message', async (message) => {
+        console.log('message', message);
+        let msg = new Message(message);
+        let msgSaved = await msg.save();
+        console.log('msgSaved', msgSaved);
+        await Chat.updateOne({ room: message.room }, {
+            $push: {
+                messages: msgSaved._id
+            },
+        });
+        await Chat.findOneAndUpdate({room: message.room}, {
+            lastMessage: msgSaved.message,
+            lastMessageDate: msgSaved.created
+        });
+
+
+        console.log('sending room post', message);
+        socket.to(message.room).emit('message', msgSaved);
+    });
+});
+
+let port = process.env.PORT || 3001;
+
+http.listen(port, function(){
+    console.log('listening in http://localhost:' + port);
+});
 
 app.listen(3000);
 

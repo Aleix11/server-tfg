@@ -12,7 +12,17 @@ let user = mongoose.Schema({
         reset_password_token: String,
         reset_password_expires: Date,
         friends: [],
-        summoners: []
+        summoners: [],
+        profilePhoto: String,
+        stats: {
+            total: Number,
+            wins: Number,
+            losses: Number,
+            ratioWinLose: Number,
+            userMostBets: String,
+            youAreNemesisOf: String,
+            yourNemesisIs: String
+        }
     }, {
         collection: 'user'
     }
