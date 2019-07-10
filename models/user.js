@@ -22,7 +22,8 @@ let user = mongoose.Schema({
             userMostBets: String,
             youAreNemesisOf: String,
             yourNemesisIs: String
-        }
+        },
+        wallet: {}
     }, {
         collection: 'user'
     }

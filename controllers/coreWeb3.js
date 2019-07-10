@@ -6,7 +6,7 @@ let solc = require('solc');
 const ganache = require('ganache-cli');
 
 // use the given Provider, e.g in Mist, or instantiate a new websocket provider
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
 
 // A new contract instance without bytecode (abi interface)
@@ -20,7 +20,7 @@ exports.createBet = async function (tokens, from, contractAddress) {
 
         const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
 
-        console.log(tokens, from);
+        console.log(tokens, from, contractAddress);
         await myContract.methods.betCreate(tokens).send({
             gas: 1500000,
             gasPrice: '300000000000',
@@ -84,6 +84,8 @@ exports.closeBet = async function (winner, tokens, from, contractAddress, id) {
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
         const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
         console.log(winner, tokens, from, contractAddress, id);
+
+        console.log('llega, es el de antes')
 
         await myContract.methods.betClose(winner, tokens, id).send({
             gas: 1500000,
@@ -224,14 +226,21 @@ exports.transferTokens = async function (contractAddress, tokens, from, to) {
     });
 };
 
-exports.getTokensOfAddress = async function (contractAddress, address) {
-    let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-    const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+exports.getTokensOfAddress = async function (contractAddress, address, owner) {
+    return new Promise(async (resolve, reject) => {
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
 
-    return await myContract.methods.balanceOf(address).call()
-        .then('then', (result) => {
-            console.log('Result', result);
+        console.log(contractAddress, address);
+        await myContract.methods.balanceOf(address).call({from: address})
+            .then((result) => {
+                console.log('Result', result);
+                if(result) {
+                    resolve({tokens:result});
+                }
+            });
     });
+
 };
 
 exports.createWallet = async function () {

@@ -8,11 +8,12 @@ let userScripts = require('../controllers/userScript');
 /* POST users listing. */
 router.post('/login', userScripts.login);
 router.post('/register', userScripts.register);
-router.post('/createWallet', userScripts.createWallet);
-router.post('/loadWallet', userScripts.loadWallet);
+// router.post('/createWallet', userScripts.createWallet);
+// router.post('/loadWallet', userScripts.loadWallet);
 
 router.post('/getUserFromId', userScripts.getUserFromId);
 router.post('/getUserFromUsername', userScripts.getUserFromUsername);
+router.post('/getNumberTokens', userScripts.getNumberTokens);
 router.post('/editUser', userScripts.editUser);
 router.post('/editFavouriteSummoner', userScripts.editFavouriteSummoner);
 

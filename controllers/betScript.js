@@ -11,18 +11,14 @@ let ObjectId = require('mongodb').ObjectID;
 let summonerScripts = require('../controllers/summonerScript');
 
 
-let owner = "0x4f6df75c9d42f1cfe4ec4ae827bb1e4a997691fe";
-let contractAddress = "0xf367ab68ab2f69e317d82082fdc9f9435ad31fbc";
+let owner = "0x9ab0d22a0ef99565762a715680bf30cca33e2583";
+let contractAddress = "0x7010c0e292652fc7f7bd0a6eb7308063ae72e776";
 
 exports.createBet = async function (req, res) {
-    // let contractAddress = req.body.contractAddress;
-    // let contractAddress = "0xf367ab68ab2f69e317d82082fdc9f9435ad31fbc";
     let bet = req.body.bet;
 
-    let data = '0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610314806100606000396000f3fe608060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100b85780638da5cb5b146100e3578063fdacd5761461013a575b600080fd5b34801561007357600080fd5b506100b66004803603602081101561008a57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610175565b005b3480156100c457600080fd5b506100cd61025d565b6040518082815260200191505060405180910390f35b3480156100ef57600080fd5b506100f8610263565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561014657600080fd5b506101736004803603602081101561015d57600080fd5b8101908080359060200190929190505050610288565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141561025a5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b15801561024057600080fd5b505af1158015610254573d6000803e3d6000fd5b50505050505b50565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102e557806001819055505b5056fea165627a7a72305820a36a8a0408882fafef89f8454eefcf771313469ed11255fb37f329cf5aeb75b30029';
-    // let data = '0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610314806100606000396000f3fe608060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100b85780638da5cb5b146100e3578063fdacd5761461013a575b600080fd5b34801561007357600080fd5b506100b66004803603602081101561008a57600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610175565b005b3480156100c457600080fd5b506100cd61025d565b6040518082815260200191505060405180910390f35b3480156100ef57600080fd5b506100f8610263565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561014657600080fd5b506101736004803603602081101561015d57600080fd5b8101908080359060200190929190505050610288565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141561025a5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b15801561024057600080fd5b505af1158015610254573d6000803e3d6000fd5b50505050505b50565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102e557806001819055505b5056fea165627a7a72305820a36a8a0408882fafef89f8454eefcf771313469ed11255fb37f329cf5aeb75b30029';
-
-    let betId = await coreWeb3.createBet(bet.tokens, bet.addressBettor1, contractAddress);
+    // let betId = await coreWeb3.createBet(bet.tokens, bet.addressBettor1, contractAddress);
+    let betId = req.body.betId;
 
     if(betId && betId.error) {
         res.status(400).json('Error');
@@ -65,7 +61,7 @@ exports.acceptBet = async function (req, res) {
     let bet = req.body.bet;
     console.log(bet);
     if(bet.addressBettor1 !== bet.addressBettor2 && bet.bettor1 !== bet.bettor2) {
-        let tx = await coreWeb3.acceptBet(bet.tokens, bet.addressBettor2, contractAddress, bet.id);
+        // let tx = await coreWeb3.acceptBet(bet.tokens, bet.addressBettor2, contractAddress, bet.id);
 
         await Bet.findOneAndUpdate({
             _id: ObjectId(bet._id)
@@ -98,6 +94,58 @@ exports.closeBet = async function (bet, winner) {
         return bet;
     })
     .catch(error => console.log(error));
+};
+
+exports.closeFromPending = async function (req, res) {
+    let bet = res.body.bet;
+    console.log(bet);
+
+    await coreWeb3.closeBetFromPending(bet.addressBettor1, bet.tokens, bet.addressBettor1, contractAddress, bet.id);
+
+    await Bet.findOneAndUpdate({
+        _id: ObjectId(bet._id)
+    }, {
+        state: 'close',
+        winner: 'no'
+    }, { new: true }).then(bet => {
+        console.log(bet._id, bet.state);
+        return bet;
+    })
+        .catch(error => console.log(error));
+
+};
+
+exports.getBetsPendingFromUser = async function (req, res) {
+  let user = req.body.user;
+
+    await Bet.find({
+        bettor1: user._id,
+        state: 'pending'
+    }).then(async bts1 => {
+        console.log(bts1);
+        res.status(200).json(bts1);
+    }).catch(error => console.log(error));
+
+};
+
+exports.getBetsOpenFromUser = async function (req, res) {
+    let user = req.body.user;
+
+    await Bet.find({
+        bettor1: user._id,
+        state: 'open'
+    }).then(async bts1 => {
+        console.log(bts1);
+        await Bet.find({
+            bettor2: user._id,
+            state: 'open'
+        }).then(async bts2 => {
+            console.log(bts2);
+            bts1 = bts1.concat(bts2);
+            res.status(200).json(bts1);
+        }).catch(error => console.log(error));
+    }).catch(error => console.log(error));
+
 };
 
 async function closeBetPending(bet) {
