@@ -110,4 +110,5 @@ contract Bets is ERC20 {
         state = bets[_id].state;
     }
 
+
 }
