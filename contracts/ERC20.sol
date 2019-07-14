@@ -20,7 +20,7 @@ contract ERC20 is IERC20 {
 
     // METADATA FUNCTIONS
     function name() external pure returns (string memory _name){
-        return "e-bet";
+        return "E-bets";
     }
 
     function symbol() external pure returns (string memory _symbol){
