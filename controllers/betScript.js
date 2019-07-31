@@ -11,8 +11,8 @@ let ObjectId = require('mongodb').ObjectID;
 let summonerScripts = require('../controllers/summonerScript');
 
 
-let owner = "0x9ab0d22a0ef99565762a715680bf30cca33e2583";
-let contractAddress = "0x7010c0e292652fc7f7bd0a6eb7308063ae72e776";
+let owner = "0x2c33f8f424d25db0c90f47daeb57f30c700ac196";
+let contractAddress = "0x6f51c7377cdc5e4526f37ce4d8f848aed1cccf17";
 
 exports.createBet = async function (req, res) {
     let bet = req.body.bet;

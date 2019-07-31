@@ -6,7 +6,7 @@ let solc = require('solc');
 const ganache = require('ganache-cli');
 
 // use the given Provider, e.g in Mist, or instantiate a new websocket provider
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
 
 
 // A new contract instance without bytecode (abi interface)
@@ -241,6 +241,68 @@ exports.getTokensOfAddress = async function (contractAddress, address, owner) {
             });
     });
 
+};
+
+exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, tokens) {
+    return new Promise(async (resolve, reject) => {
+        web3.eth.personal.unlockAccount("0x2C33F8F424d25DB0C90f47daeb57F30C700aC196", "1234567890", 0);
+
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+
+        console.log(contractAddress, buyer, tokens, owner);
+        await myContract.methods.buyTokensPassTokens(buyer, tokens).send({
+            gas: 1500000,
+            gasPrice: '300000000000',
+            from: owner,
+        }).on('error', (error) => {
+            console.log('error', error);
+            resolve({error: error});
+        })
+        .on('transactionHash', (transactionHash) => {
+            console.log('transactionHash', transactionHash);
+        })
+        .on('receipt', async (receipt) => {
+            console.log('receipt', receipt); // contains the new contract address
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+            console.log('confirmation', confirmationNumber, receipt);
+            resolve(receipt);
+        })
+        .then((newContractInstance) => {
+            console.log('then', newContractInstance);
+        });
+    });
+};
+
+exports.sellTokensPassEthers = async function(contractAddress, owner, buyer, tokens) {
+    return new Promise(async (resolve, reject) => {
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+
+        console.log(contractAddress, buyer, tokens, owner);
+        await myContract.methods.sellTokensPassEthers(buyer, tokens).send({
+            gas: 1500000,
+            gasPrice: '300000000000',
+            from: owner,
+        }).on('error', (error) => {
+            console.log('error', error);
+            resolve({error: error});
+        })
+        .on('transactionHash', (transactionHash) => {
+            console.log('transactionHash', transactionHash);
+        })
+        .on('receipt', async (receipt) => {
+            console.log('receipt', receipt); // contains the new contract address
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+            console.log('confirmation', confirmationNumber, receipt);
+            resolve(receipt);
+        })
+        .then((newContractInstance) => {
+            console.log('then', newContractInstance);
+        });
+    });
 };
 
 exports.createWallet = async function () {

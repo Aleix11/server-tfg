@@ -22,4 +22,7 @@ router.post('/search', userScripts.searchUser);
 router.post('/friends/add', userScripts.addFriend);
 router.post('/friends/delete', userScripts.deleteFriend);
 
+router.post('/buyTokensPassTokens', userScripts.buyTokensPassTokens);
+router.post('/sellTokensPassEthers', userScripts.sellTokensPassEthers);
+
 module.exports = router;
