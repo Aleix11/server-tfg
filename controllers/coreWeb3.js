@@ -4,6 +4,11 @@ const Web3 = require('web3');
 const fs = require('fs');
 let solc = require('solc');
 const ganache = require('ganache-cli');
+const TX = require('ethereumjs-tx');
+const keythereum = require('keythereum');
+
+const pass = "1234567890";
+const datadir = "/Users/aleix/Library/Ethereum/testnet/";
 
 // use the given Provider, e.g in Mist, or instantiate a new websocket provider
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
@@ -85,7 +90,7 @@ exports.closeBet = async function (winner, tokens, from, contractAddress, id) {
         const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
         console.log(winner, tokens, from, contractAddress, id);
 
-        console.log('llega, es el de antes')
+        console.log('llega, es el de antes');
 
         await myContract.methods.betClose(winner, tokens, id).send({
             gas: 1500000,
@@ -110,13 +115,14 @@ exports.closeBet = async function (winner, tokens, from, contractAddress, id) {
     });
 };
 
+
 exports.closeBetFromPending = async function (bettor1, tokens, from, contractAddress, id) {
     return new Promise(async (resolve, reject) => {
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        let myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
         console.log(bettor1, tokens, from, contractAddress, id);
 
-        await myContract.methods.betCloseFromPending(bettor1, tokens, id).send({
+        /*await myContract.methods.betCloseFromPending(bettor1, tokens, id).send({
             gas: 1500000,
             gasPrice: '300000000000',
             from: from,
@@ -135,7 +141,53 @@ exports.closeBetFromPending = async function (bettor1, tokens, from, contractAdd
         .then((newContractInstance) => {
             console.log(newContractInstance); // instance with the new contract address
             resolve(newContractInstance);
+        });*/
+
+
+
+        await myContract.setProvider(new Web3.providers.HttpProvider('http://localhost:8545'));
+
+        console.log('from: ', from, typeof from);
+        let nonce = await web3.eth.getTransactionCount(from, 0);
+
+        console.log('nonce: ', nonce);
+
+        let betCloseFromPending = myContract.methods.betCloseFromPending(bettor1, tokens, id);
+        let encodedABI = betCloseFromPending.encodeABI();
+
+        let tx = {
+            gas: 1500000,
+            gasPrice: '30000000000',
+            from: from,
+            data: encodedABI,
+            chainId: 3,
+            to: contractAddress,
+            nonce: nonce,
+        };
+
+        let keyObject = keythereum.importFromFile(from, datadir);
+        let privateKey = keythereum.recover(pass, keyObject);
+        console.log(privateKey, privateKey.toString('hex'));
+
+        await web3.eth.accounts.signTransaction(tx, privateKey.toString('hex')).then(signed => {
+            console.log('signed: ', signed);
+
+            web3.eth.sendSignedTransaction(signed.rawTransaction)
+                .on('error', (error) => {
+                console.log('error', error);
+                })
+                .on('transactionHash', (transactionHash) => {
+                    console.log('transactionHash', transactionHash);
+                })
+                .on('receipt', async (receipt) => {
+                    console.log('receipt', receipt);
+                })
+                .on('confirmation', (confirmationNumber, receipt) => {
+                    console.log('confirmation', confirmationNumber, receipt);
+
+                });
         });
+
     });
 };
 
@@ -245,13 +297,57 @@ exports.getTokensOfAddress = async function (contractAddress, address, owner) {
 
 exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, tokens) {
     return new Promise(async (resolve, reject) => {
-        web3.eth.personal.unlockAccount("0x2C33F8F424d25DB0C90f47daeb57F30C700aC196", "1234567890", 0);
-
+        console.log('llega', owner, typeof owner);
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
         const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
 
+        // let isUnlocked = await web3.eth.personal.unlockAccount(owner, "1234567890", 0);
+        // console.log('unlock: ', isUnlocked);
+
+        console.log('from: ', owner, typeof owner);
+        let nonce = await web3.eth.getTransactionCount(owner, 0);
+
+        console.log('nonce: ', nonce);
+
+        let buyTokensPassTokens = myContract.methods.buyTokensPassTokens(buyer, tokens);
+        let encodedABI = buyTokensPassTokens.encodeABI();
+
+        let tx = {
+            gas: 1500000,
+            gasPrice: '30000000000',
+            from: owner,
+            data: encodedABI,
+            chainId: 3,
+            to: contractAddress,
+            nonce: nonce,
+        };
+
+        let keyObject = keythereum.importFromFile(owner, datadir);
+        let privateKey = keythereum.recover(pass, keyObject);
+        console.log(privateKey, privateKey.toString('hex'));
+
+
         console.log(contractAddress, buyer, tokens, owner);
-        await myContract.methods.buyTokensPassTokens(buyer, tokens).send({
+
+        await web3.eth.accounts.signTransaction(tx, privateKey.toString('hex')).then(async signed => {
+            console.log('signed: ', signed);
+
+            await web3.eth.sendSignedTransaction(signed.rawTransaction)
+                .on('error', (error) => {
+                    console.log('error', error);
+                })
+                .on('transactionHash', (transactionHash) => {
+                    console.log('transactionHash', transactionHash);
+                })
+                .on('receipt', async (receipt) => {
+                    console.log('receipt', receipt);
+                })
+                .on('confirmation', (confirmationNumber, receipt) => {
+                    console.log('confirmation', confirmationNumber, receipt);
+
+                });
+        });
+        /*await myContract.methods.buyTokensPassTokens(buyer, tokens).send({
             gas: 1500000,
             gasPrice: '300000000000',
             from: owner,
@@ -271,7 +367,10 @@ exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, toke
         })
         .then((newContractInstance) => {
             console.log('then', newContractInstance);
-        });
+        })
+        .catch((error) => {
+            console.log('error', error);
+        });*/
     });
 };
 

@@ -121,7 +121,7 @@ const job = new CronJob('0 */1 * * * *', function() {
     console.log('At 1 Minute:', d);
     betScripts.cronFunction();
 });
-job.start();
+//job.start();
 
 io.on('connection', (socket) => {
     socket.on('subscribe', async function(users) {

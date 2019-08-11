@@ -12,7 +12,7 @@ let summonerScripts = require('../controllers/summonerScript');
 
 
 let owner = "0x2c33f8f424d25db0c90f47daeb57f30c700ac196";
-let contractAddress = "0x6f51c7377cdc5e4526f37ce4d8f848aed1cccf17";
+let contractAddress = "0xbf1e3315d6f064ac3111420991cfdadb99665d6d";
 
 exports.createBet = async function (req, res) {
     let bet = req.body.bet;
@@ -119,10 +119,10 @@ exports.getBetsPendingFromUser = async function (req, res) {
   let user = req.body.user;
 
     await Bet.find({
-        bettor1: user._id,
+        bettor1: user.username,
         state: 'pending'
     }).then(async bts1 => {
-        console.log(bts1);
+        console.log('beets pending: ', bts1);
         res.status(200).json(bts1);
     }).catch(error => console.log(error));
 
@@ -132,15 +132,15 @@ exports.getBetsOpenFromUser = async function (req, res) {
     let user = req.body.user;
 
     await Bet.find({
-        bettor1: user._id,
+        bettor1: user.username,
         state: 'open'
     }).then(async bts1 => {
-        console.log(bts1);
+        console.log('beets open: ', bts1);
         await Bet.find({
-            bettor2: user._id,
+            bettor2: user.username,
             state: 'open'
         }).then(async bts2 => {
-            console.log(bts2);
+            console.log('beets open 2: ', bts1);
             bts1 = bts1.concat(bts2);
             res.status(200).json(bts1);
         }).catch(error => console.log(error));
@@ -149,7 +149,6 @@ exports.getBetsOpenFromUser = async function (req, res) {
 };
 
 async function closeBetPending(bet) {
-    console.log(bet);
 
     await coreWeb3.closeBetFromPending(bet.addressBettor1, bet.tokens, owner, contractAddress, bet.id);
 
@@ -375,7 +374,7 @@ async function checkPendingBets() {
         duration: { $lt: now },
     }).then(bets => {
         bets.forEach(bet => {
-            console.log(now, bet.duration);
+            console.log('Close Pending duration finished: ', now, bet.duration);
 
             closeBetPending(bet);
         });
