@@ -11,7 +11,7 @@ let optionsRequest = {
     headers: {
         "Origin": "https://developer.riotgames.com",
         "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Riot-Token": "RGAPI-c3d3b8d5-992c-47f0-9873-cbeaaf420aef",
+        "X-Riot-Token": "RGAPI-32363309-6116-4c66-8d8d-e673ce80b1c8",
         "Accept-Language": "es-ES,es;q=0.9",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"
     }
@@ -167,7 +167,7 @@ exports.getMatch = async function(game) {
             } else if (httpResponse.statusCode === 404) {
                 console.log(404);
                 resolve({
-                    mode: 2,
+                     mode: 2,
                     game: game
                 });
             } else{

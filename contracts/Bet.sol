@@ -10,10 +10,6 @@ contract Bets is ERC20 {
 
     using SafeMath for uint256;
 
-    // using BetLibrary for BetLibrary.Bet;
-
-    // BetLibrary.Bet public bet;
-
     enum BetState { open, close, pending }
 
     struct Bet {
@@ -82,7 +78,7 @@ contract Bets is ERC20 {
         @param _amount Quantity of tokens for bet
     */
     function betOpen(uint256 _amount, uint256 _id) external {
-        require(balances[msg.sender] >= _amount);
+        require(balances[msg.sender] >= _amount); // Ficar require que l'estat sigui pending
         approve(msg.sender, _amount);
         transfer(owner, _amount);
         bets[_id].bettor2 = msg.sender;
@@ -150,15 +146,15 @@ contract Bets is ERC20 {
     }
 
     // Function that is called from a user
-    function buyTokensPassEthers() public payable {
+    function buyTokensPassEthers() external payable {
         require(msg.value > 0);
         tokensToBuy[msg.sender] = tokensToBuy[msg.sender].add(msg.value.mul(tokenBuyPrice).div(10**18));
-        owner.transfer(msg.value);
         emit BuyTokensSendEthers(msg.sender, msg.value.mul(tokenBuyPrice).div(10**18));
+        owner.transfer(msg.value);
     }
 
     // Function that is called from owner
-    function buyTokensPassTokens(address _address, uint _tokens) public onlyOwner {
+    function buyTokensPassTokens(address _address, uint _tokens) external onlyOwner {
         require(_tokens > 0);
         require(tokensToBuy[_address] >= _tokens);
         tokensToBuy[_address] = tokensToBuy[_address].sub(_tokens);
@@ -168,7 +164,7 @@ contract Bets is ERC20 {
     }
 
     // Function that is called from a user
-    function sellTokensPassTokens(uint _tokens) public {
+    function sellTokensPassTokens(uint _tokens) external {
         require(_tokens > 0);
         tokensToSell[msg.sender] = tokensToSell[msg.sender].add(_tokens);
         approve(owner, _tokens);
@@ -176,12 +172,12 @@ contract Bets is ERC20 {
         emit SellTokensSendTokens(msg.sender, _tokens);
     }
     // Function that is called from the owner
-    function sellTokensPassEthers(address payable _address, uint _tokens) public payable onlyOwner {
+    function sellTokensPassEthers(address payable _address, uint _tokens) external payable onlyOwner {
         require(msg.value > 0);
         require(tokensToSell[_address] >= _tokens);
         tokensToSell[_address] = tokensToSell[_address].sub(_tokens);
-        _address.transfer(msg.value);
         emit SellTokensSendEthers(msg.sender, _tokens);
+        _address.transfer(msg.value);
     }
 
 }

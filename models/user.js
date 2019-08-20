@@ -7,7 +7,6 @@ let user = mongoose.Schema({
         password: String,
         email: String,
         address: String,
-        privateKey: String,
         token: String,
         reset_password_token: String,
         reset_password_expires: Date,

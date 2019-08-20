@@ -17,7 +17,6 @@ let contractAddress = "0xbf1e3315d6f064ac3111420991cfdadb99665d6d";
 exports.createBet = async function (req, res) {
     let bet = req.body.bet;
 
-    // let betId = await coreWeb3.createBet(bet.tokens, bet.addressBettor1, contractAddress);
     let betId = req.body.betId;
 
     if(betId && betId.error) {
@@ -59,10 +58,8 @@ exports.searchBet = async function (req, res) {
 
 exports.acceptBet = async function (req, res) {
     let bet = req.body.bet;
-    console.log(bet);
-    if(bet.addressBettor1 !== bet.addressBettor2 && bet.bettor1 !== bet.bettor2) {
-        // let tx = await coreWeb3.acceptBet(bet.tokens, bet.addressBettor2, contractAddress, bet.id);
 
+    if(bet.addressBettor1 !== bet.addressBettor2 && bet.bettor1 !== bet.bettor2) {
         await Bet.findOneAndUpdate({
             _id: ObjectId(bet._id)
         }, {
@@ -191,7 +188,7 @@ exports.transferTokens = async function (req, res) {
         res.status(400).json('Error');
 
     } else {
-        res.status(200).json(tokens);
+        res.status(200).json(tx);
     }
 };
 
@@ -556,35 +553,45 @@ async function stats(user) {
                     }
                 }
 
-                if(index === bets1.length - 1) {
-                    win.sort(function (a, b) {
-                       if(a.quantity < b.quantity) return -1;
-                       if(a.quantity > b.quantity) return 1;
-                       return 0;
-                    });
-                    loss.sort(function (a, b) {
-                        if(a.quantity < b.quantity) return -1;
-                        if(a.quantity > b.quantity) return 1;
-                        return 0;
-                    });
-                    bets.sort(function (a, b) {
-                        if(a.quantity < b.quantity) return -1;
-                        if(a.quantity > b.quantity) return 1;
-                        return 0;
-                    });
-                    console.log('aaaa', win, loss, bets);
-                    await User.findOneAndUpdate({
-                        username: user
-                    }, {
-                        "stats.total": bets1.length,
-                        "stats.losses": losses,
-                        "stats.wins": wins,
-                        "stats.ratioWinLose": wins/losses,
-                        "stats.userMostBets": bets[0].vs,
-                        "stats.youAreNemesisOf": win[0].vs,
-                        "stats.yourNemesisIs": loss[0].vs
-                    }, {new:true});
+                if (index !== bets1.length - 1) {
+                    return;
                 }
+                win.sort(function (a, b) {
+                    if (a.quantity < b.quantity) return -1;
+                    if (a.quantity > b.quantity) return 1;
+                    return 0;
+                });
+                loss.sort(function (a, b) {
+                    if (a.quantity < b.quantity) return -1;
+                    if (a.quantity > b.quantity) return 1;
+                    return 0;
+                });
+                bets.sort(function (a, b) {
+                    if (a.quantity < b.quantity) return -1;
+                    if (a.quantity > b.quantity) return 1;
+                    return 0;
+                });
+                console.log('aaaa', win, loss, bets);
+                let winText, lossText;
+                if (win[0].vs)
+                    winText = win[0].vs;
+                else
+                    'No One';
+                if (loss[0].vs)
+                    lossText = loss[0].vs;
+                else
+                    'No One';
+                await User.findOneAndUpdate({
+                    username: user
+                }, {
+                    "stats.total": bets1.length,
+                    "stats.losses": losses,
+                    "stats.wins": wins,
+                    "stats.ratioWinLose": wins / losses,
+                    "stats.userMostBets": bets[0].vs,
+                    "stats.youAreNemesisOf": winText,
+                    "stats.yourNemesisIs": lossText
+                }, {new: true});
             });
         });
     });

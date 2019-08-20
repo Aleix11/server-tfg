@@ -8,6 +8,8 @@ let mongoose = require('mongoose');
 let timeout = require('connect-timeout'); //express v4
 let CronJob = require('cron').CronJob;
 
+const Web3 = require('web3');
+
 let users = require('./routes/userRoutes');
 let chats = require('./routes/chatRoutes');
 let games = require('./routes/gameRoutes');
@@ -34,7 +36,7 @@ let allowCrossDomain = function(req, res, next) {
     next();
 };
 
-require('./controllers/initWeb3');
+// require('./controllers/initWeb3');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -121,7 +123,7 @@ const job = new CronJob('0 */1 * * * *', function() {
     console.log('At 1 Minute:', d);
     betScripts.cronFunction();
 });
-//job.start();
+job.start();
 
 io.on('connection', (socket) => {
     socket.on('subscribe', async function(users) {

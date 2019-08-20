@@ -4,114 +4,69 @@ const Web3 = require('web3');
 const fs = require('fs');
 let solc = require('solc');
 const ganache = require('ganache-cli');
-const TX = require('ethereumjs-tx');
+const Tx = require('ethereumjs-tx').Transaction;
 const keythereum = require('keythereum');
 
 const pass = "1234567890";
 const datadir = "/Users/aleix/Library/Ethereum/testnet/";
 
-// use the given Provider, e.g in Mist, or instantiate a new websocket provider
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+const web3 = new Web3("http://localhost:8545");
 
+console.log(web3.currentProvider);
+
+web3.eth.net.isListening()
+    .then(console.log);
+// Check if the connection has been made
+web3.currentProvider ? console.log('web3.js is connected...') : console.error('web3.js is not connected...');
 
 // A new contract instance without bytecode (abi interface)
 exports.abiInstance = function (abi) {
     return new web3.eth.Contract(JSON.parse(abi));
 };
 
-exports.createBet = async function (tokens, from, contractAddress) {
-    return new Promise(async (resolve, reject) => {
-        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-
-        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
-
-        console.log(tokens, from, contractAddress);
-        await myContract.methods.betCreate(tokens).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
-            from: from,
-        }).on('error', (error) => {
-            console.log('error', error);
-            resolve({error: error});
-        })
-            .on('transactionHash', (transactionHash) => {
-                console.log('transactionHash', transactionHash);
-            })
-            .on('receipt', async (receipt) => {
-                console.log('receipt', receipt);
-            })
-            .on('confirmation', (confirmationNumber, receipt) => {
-                console.log('confirmation', confirmationNumber, receipt)
-            })
-            .then((newContractInstance) => {
-                console.log('contractInstance', newContractInstance); // instance with the new contract address
-                if(newContractInstance && newContractInstance.events) {
-                    console.log(newContractInstance.events.BetPending.returnValues.id);
-                    resolve(newContractInstance.events.BetPending.returnValues.id);
-                } else {
-                    resolve({error: 'Error'});
-                }
-            });
-    });
-};
-
-exports.acceptBet = async function (tokens, from, contractAddress, id) {
-    return new Promise(async (resolve, reject) => {
-        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
-        console.log(tokens, from, contractAddress, id);
-
-        await myContract.methods.betOpen(tokens, id).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
-            from: from,
-        }).on('error', (error) => {
-            console.log('error', error);
-        })
-        .on('transactionHash', (transactionHash) => {
-            console.log('transactionHash', transactionHash);
-        })
-        .on('receipt', async (receipt) => {
-            console.log('receipt'); // contains the new contract address
-        })
-        .on('confirmation', (confirmationNumber, receipt) => {
-            console.log(confirmationNumber, receipt)
-        })
-        .then((newContractInstance) => {
-            console.log(newContractInstance); // instance with the new contract address
-            resolve(newContractInstance);
-        });
-    });
-};
-
 exports.closeBet = async function (winner, tokens, from, contractAddress, id) {
     return new Promise(async (resolve, reject) => {
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        const myContract = new web3.eth.Contract(JSON.parse(abi));
+        myContract.options.address = contractAddress;
         console.log(winner, tokens, from, contractAddress, id);
 
-        console.log('llega, es el de antes');
-
-        await myContract.methods.betClose(winner, tokens, id).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
+        const toSignTx = {
             from: from,
-        }).on('error', (error) => {
-            console.log('error', error);
-        })
-            .on('transactionHash', (transactionHash) => {
-                console.log('transactionHash', transactionHash);
-            })
-            .on('receipt', async (receipt) => {
-                console.log('receipt'); // contains the new contract address
-            })
-            .on('confirmation', (confirmationNumber, receipt) => {
-                console.log(confirmationNumber, receipt)
-            })
-            .then((newContractInstance) => {
-                console.log('contract instance', newContractInstance); // instance with the new contract address
-                resolve(newContractInstance);
+            to: contractAddress,
+            nonce: web3.eth.getTransactionCount(from),
+            gas: 300000,
+            data: myContract.methods.betClose(winner, tokens, id).encodeABI(),
+            value: null,
+        };
+
+        let keyObject = keythereum.importFromFile(from, datadir);
+        let privateKey = keythereum.recover(pass, keyObject);
+        console.log(privateKey, privateKey.toString('hex'));
+
+        try {
+            const signedTx = await web3.eth.accounts.signTransaction(toSignTx, "0x"+privateKey.toString('hex'));
+            //const sentTx = await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction);
+            await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
+                .on('error', (error) => {
+                    console.log('error', error);
+                })
+                .on('transactionHash', (transactionHash) => {
+                    console.log('transactionHash', transactionHash);
+                })
+                .on('receipt', async (receipt) => {
+                    console.log('receipt', receipt);
+                })
+                .on('confirmation', (confirmationNumber, receipt) => {
+                    console.log('confirmation', confirmationNumber, receipt);
+                    resolve(receipt);
+                });
+        } catch (error) {
+            console.log(error.message); // By the moment we don't get the revert reason.
+            resolve({
+                error: error.message
             });
+        }
     });
 };
 
@@ -119,60 +74,27 @@ exports.closeBet = async function (winner, tokens, from, contractAddress, id) {
 exports.closeBetFromPending = async function (bettor1, tokens, from, contractAddress, id) {
     return new Promise(async (resolve, reject) => {
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        let myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        const myContract = new web3.eth.Contract(JSON.parse(abi));
+        myContract.options.address = contractAddress;
         console.log(bettor1, tokens, from, contractAddress, id);
 
-        /*await myContract.methods.betCloseFromPending(bettor1, tokens, id).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
+        const toSignTx = {
             from: from,
-        }).on('error', (error) => {
-            console.log('error', error);
-        })
-        .on('transactionHash', (transactionHash) => {
-            console.log('transactionHash', transactionHash);
-        })
-        .on('receipt', async (receipt) => {
-            console.log('receipt'); // contains the new contract address
-        })
-        .on('confirmation', (confirmationNumber, receipt) => {
-            console.log(confirmationNumber, receipt)
-        })
-        .then((newContractInstance) => {
-            console.log(newContractInstance); // instance with the new contract address
-            resolve(newContractInstance);
-        });*/
-
-
-
-        await myContract.setProvider(new Web3.providers.HttpProvider('http://localhost:8545'));
-
-        console.log('from: ', from, typeof from);
-        let nonce = await web3.eth.getTransactionCount(from, 0);
-
-        console.log('nonce: ', nonce);
-
-        let betCloseFromPending = myContract.methods.betCloseFromPending(bettor1, tokens, id);
-        let encodedABI = betCloseFromPending.encodeABI();
-
-        let tx = {
-            gas: 1500000,
-            gasPrice: '30000000000',
-            from: from,
-            data: encodedABI,
-            chainId: 3,
             to: contractAddress,
-            nonce: nonce,
+            nonce: web3.eth.getTransactionCount(from),
+            gas: 300000,
+            data: myContract.methods.betCloseFromPending(bettor1, tokens, id).encodeABI(),
+            value: null,
         };
 
         let keyObject = keythereum.importFromFile(from, datadir);
         let privateKey = keythereum.recover(pass, keyObject);
         console.log(privateKey, privateKey.toString('hex'));
 
-        await web3.eth.accounts.signTransaction(tx, privateKey.toString('hex')).then(signed => {
-            console.log('signed: ', signed);
-
-            web3.eth.sendSignedTransaction(signed.rawTransaction)
+        try {
+            const signedTx = await web3.eth.accounts.signTransaction(toSignTx, "0x"+privateKey.toString('hex'));
+            //const sentTx = await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction);
+            await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
                 .on('error', (error) => {
                 console.log('error', error);
                 })
@@ -184,10 +106,14 @@ exports.closeBetFromPending = async function (bettor1, tokens, from, contractAdd
                 })
                 .on('confirmation', (confirmationNumber, receipt) => {
                     console.log('confirmation', confirmationNumber, receipt);
-
+                    resolve(receipt);
                 });
-        });
-
+        } catch (error) {
+            console.log(error.message); // By the moment we don't get the revert reason.
+            resolve({
+                error: error.message
+            });
+        }
     });
 };
 
@@ -220,61 +146,77 @@ exports.closeBetRemake = async function (bettor1, bettor2, tokens, from, contrac
     });
 };
 
-// exports.transferTokens = async function (contractAddress, tokens, from, to) {
-//     let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-//     const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
-//
-//     let tx = await myContract.methods.transfer(to, tokens).send({
-//         gas: 1500000,
-//         gasPrice: '300000000000',
-//         from: from,
-//     });
-//
-// };
 
 exports.transferTokens = async function (contractAddress, tokens, from, to) {
-    let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-    const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+    return new Promise(async (resolve, reject) => {
 
-    console.log(from, tokens);
-    await myContract.methods.approve(from, tokens).send({
-        gas: 1500000,
-        gasPrice: '300000000000',
-        from: from,
-    }).on('error', (error) => {
-        console.log('error', error);
-        return {error: error};
-    })
-    .on('transactionHash', (transactionHash) => {
-        console.log('transactionHash', transactionHash);
-    })
-    .on('receipt', async (receipt) => {
-        console.log('receipt', receipt); // contains the new contract address
-    })
-    .on('confirmation', (confirmationNumber, receipt) => {
-        console.log('confitmation', confirmationNumber, receipt)
-    })
-    .then(async (newContractInstance) => {
-        await myContract.methods.transfer(to, tokens).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
+        let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
+        const myContract = new web3.eth.Contract(JSON.parse(abi));
+        myContract.options.address = contractAddress;
+
+        const toSignTx = {
             from: from,
-        }).on('error', (error) => {
-            console.log('error', error);
-            return {error: error};
-        })
-        .on('transactionHash', (transactionHash) => {
-            console.log('transactionHash', transactionHash);
-        })
-        .on('receipt', async (receipt) => {
-            console.log('receipt', receipt); // contains the new contract address
-        })
-        .on('confirmation', (confirmationNumber, receipt) => {
-            console.log('confirmation', confirmationNumber, receipt)
-        })
-        .then((newContractInstance) => {
-            console.log('then', newContractInstance);
-        });
+            to: contractAddress,
+            nonce: web3.eth.getTransactionCount(from),
+            gas: 300000,
+            data: myContract.methods.approve(from, tokens).encodeABI(),
+            value: null,
+        };
+
+        let keyObject = keythereum.importFromFile(from, datadir);
+        let privateKey = keythereum.recover(pass, keyObject);
+        console.log(privateKey, privateKey.toString('hex'));
+
+        try {
+            const signedTx = await web3.eth.accounts.signTransaction(toSignTx, "0x" + privateKey.toString('hex'));
+            //const sentTx = await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction);
+            await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
+                .on('error', (error) => {
+                    console.log('error', error);
+                })
+                .on('transactionHash', (transactionHash) => {
+                    console.log('transactionHash', transactionHash);
+                })
+                .on('receipt', async (receipt) => {
+                    console.log('receipt', receipt);
+                })
+                .on('confirmation', async (confirmationNumber, receipt) => {
+                    console.log('confirmation', confirmationNumber, receipt);
+                    const toSignTx2 = {
+                        from: from,
+                        to: contractAddress,
+                        nonce: web3.eth.getTransactionCount(from),
+                        gas: 300000,
+                        data: myContract.methods.transfer(to, tokens).encodeABI(),
+                        value: null,
+                    };
+
+                    try {
+                        const signedTx2 = await web3.eth.accounts.signTransaction(toSignTx2, "0x" + privateKey.toString('hex'));
+                        //const sentTx = await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction);
+                        await web3.eth.sendSignedTransaction(signedTx2.raw || signedTx2.rawTransaction)
+                            .on('error', (error) => {
+                                console.log('error', error);
+                            })
+                            .on('transactionHash', (transactionHash) => {
+                                console.log('transactionHash', transactionHash);
+                            })
+                            .on('receipt', async (receipt) => {
+                                console.log('receipt', receipt);
+                            })
+                            .on('confirmation', (confirmationNumber, receipt) => {
+                                console.log('confirmation', confirmationNumber, receipt);
+                                resolve({error: receipt});
+                            });
+                    } catch (error) {
+                        console.log(error.message); // By the moment we don't get the revert reason.
+                        resolve({error: error.message});
+                    }
+                })
+        } catch (error) {
+            console.log(error.message); // By the moment we don't get the revert reason.
+            resolve({error: error.message});
+        }
     });
 };
 
@@ -299,40 +241,25 @@ exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, toke
     return new Promise(async (resolve, reject) => {
         console.log('llega', owner, typeof owner);
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        const myContract = new web3.eth.Contract(JSON.parse(abi));
+        myContract.options.address = contractAddress;
 
-        // let isUnlocked = await web3.eth.personal.unlockAccount(owner, "1234567890", 0);
-        // console.log('unlock: ', isUnlocked);
-
-        console.log('from: ', owner, typeof owner);
-        let nonce = await web3.eth.getTransactionCount(owner, 0);
-
-        console.log('nonce: ', nonce);
-
-        let buyTokensPassTokens = myContract.methods.buyTokensPassTokens(buyer, tokens);
-        let encodedABI = buyTokensPassTokens.encodeABI();
-
-        let tx = {
-            gas: 1500000,
-            gasPrice: '30000000000',
+        const toSignTx = {
             from: owner,
-            data: encodedABI,
-            chainId: 3,
             to: contractAddress,
-            nonce: nonce,
+            nonce: web3.eth.getTransactionCount(owner),
+            gas: 300000,
+            data: myContract.methods.buyTokensPassTokens(buyer, tokens).encodeABI(),
+            value: null,
         };
 
         let keyObject = keythereum.importFromFile(owner, datadir);
         let privateKey = keythereum.recover(pass, keyObject);
         console.log(privateKey, privateKey.toString('hex'));
 
-
-        console.log(contractAddress, buyer, tokens, owner);
-
-        await web3.eth.accounts.signTransaction(tx, privateKey.toString('hex')).then(async signed => {
-            console.log('signed: ', signed);
-
-            await web3.eth.sendSignedTransaction(signed.rawTransaction)
+        try {
+            const signedTx = await web3.eth.accounts.signTransaction(toSignTx, "0x"+privateKey.toString('hex'));
+            await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
                 .on('error', (error) => {
                     console.log('error', error);
                 })
@@ -344,98 +271,59 @@ exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, toke
                 })
                 .on('confirmation', (confirmationNumber, receipt) => {
                     console.log('confirmation', confirmationNumber, receipt);
-
+                    resolve(receipt);
                 });
-        });
-        /*await myContract.methods.buyTokensPassTokens(buyer, tokens).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
-            from: owner,
-        }).on('error', (error) => {
-            console.log('error', error);
-            resolve({error: error});
-        })
-        .on('transactionHash', (transactionHash) => {
-            console.log('transactionHash', transactionHash);
-        })
-        .on('receipt', async (receipt) => {
-            console.log('receipt', receipt); // contains the new contract address
-        })
-        .on('confirmation', (confirmationNumber, receipt) => {
-            console.log('confirmation', confirmationNumber, receipt);
-            resolve(receipt);
-        })
-        .then((newContractInstance) => {
-            console.log('then', newContractInstance);
-        })
-        .catch((error) => {
-            console.log('error', error);
-        });*/
+        } catch (error) {
+            console.log(error.message); // By the moment we don't get the revert reason.
+            resolve({
+                error: error.message
+            });
+        }
     });
 };
 
 exports.sellTokensPassEthers = async function(contractAddress, owner, buyer, tokens) {
     return new Promise(async (resolve, reject) => {
+        console.log('llega', owner, typeof owner);
         let abi = fs.readFileSync('./contracts/build/Bets.abi', 'utf8');
-        const myContract = new web3.eth.Contract(JSON.parse(abi), contractAddress);
+        const myContract = new web3.eth.Contract(JSON.parse(abi));
+        myContract.options.address = contractAddress;
 
-        console.log(contractAddress, buyer, tokens, owner);
-        await myContract.methods.sellTokensPassEthers(buyer, tokens).send({
-            gas: 1500000,
-            gasPrice: '300000000000',
+        const toSignTx = {
             from: owner,
-        }).on('error', (error) => {
-            console.log('error', error);
-            resolve({error: error});
-        })
-        .on('transactionHash', (transactionHash) => {
-            console.log('transactionHash', transactionHash);
-        })
-        .on('receipt', async (receipt) => {
-            console.log('receipt', receipt); // contains the new contract address
-        })
-        .on('confirmation', (confirmationNumber, receipt) => {
-            console.log('confirmation', confirmationNumber, receipt);
-            resolve(receipt);
-        })
-        .then((newContractInstance) => {
-            console.log('then', newContractInstance);
-        });
+            to: contractAddress,
+            nonce: web3.eth.getTransactionCount(owner),
+            gas: 300000,
+            data: myContract.methods.sellTokensPassEthers(buyer, tokens).encodeABI(),
+            value: null,
+        };
+
+        let keyObject = keythereum.importFromFile(owner, datadir);
+        let privateKey = keythereum.recover(pass, keyObject);
+        console.log(privateKey, privateKey.toString('hex'));
+
+        try {
+            const signedTx = await web3.eth.accounts.signTransaction(toSignTx, "0x"+privateKey.toString('hex'));
+            await web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
+                .on('error', (error) => {
+                    console.log('error', error);
+                })
+                .on('transactionHash', (transactionHash) => {
+                    console.log('transactionHash', transactionHash);
+                })
+                .on('receipt', async (receipt) => {
+                    console.log('receipt', receipt);
+                })
+                .on('confirmation', (confirmationNumber, receipt) => {
+                    console.log('confirmation', confirmationNumber, receipt);
+                    resolve(receipt);
+                });
+        } catch (error) {
+            console.log(error.message); // By the moment we don't get the revert reason.
+            resolve({
+                error: error.message
+            });
+        }
     });
 };
 
-exports.createWallet = async function () {
-    return new Promise(async (resolve, reject) => {
-        let wallet = web3.eth.accounts.wallet.create(1);
-
-        resolve(wallet);
-    });
-};
-
-exports.loadWallet = async function () {
-    return new Promise(async (resolve, reject) => {
-        let wallet = web3.eth.accounts.wallet.create(1);
-
-        resolve(wallet);
-    });
-};
-
-
-
-// Compile a contract and get its abi and bytecode
-function abiByteCode() {
-    let compiledContract = {};
-
-    let input = {
-        'Bet.sol': fs.readFileSync('contracts/Bets.sol', 'utf8'),
-        'ERC20.sol': fs.readFileSync('contracts/ERC20.sol', 'utf8'),
-        'IERC20.sol': fs.readFileSync('contracts/IERC20.sol', 'utf8'),
-        'SafeMath.sol': fs.readFileSync('contracts/SafeMath.sol', 'utf8'),
-    };
-
-    let compiled = solc.compile({ sources: input }, 1);
-
-    compiledContract.abi = compiled.contracts['Bets.sol:Bets'].interface;
-    compiledContract.byteCode = compiled.contracts['Bets.sol:Bets'].bytecode;
-    return compiledContract;
-}
