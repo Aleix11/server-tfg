@@ -10,7 +10,7 @@ const keythereum = require('keythereum');
 const pass = "1234567890";
 const datadir = "/Users/aleix/Library/Ethereum/testnet/";
 
-const web3 = new Web3("http://localhost:8545");
+const web3 = new Web3("http://192.168.0.16:8545");
 
 console.log(web3.currentProvider);
 
@@ -105,7 +105,6 @@ exports.closeBetFromPending = async function (bettor1, tokens, from, contractAdd
                     console.log('receipt', receipt);
                 })
                 .on('confirmation', (confirmationNumber, receipt) => {
-                    console.log('confirmation', confirmationNumber, receipt);
                     resolve(receipt);
                 });
         } catch (error) {
@@ -252,6 +251,8 @@ exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, toke
             data: myContract.methods.buyTokensPassTokens(buyer, tokens).encodeABI(),
             value: null,
         };
+        console.log(owner, datadir);
+
 
         let keyObject = keythereum.importFromFile(owner, datadir);
         let privateKey = keythereum.recover(pass, keyObject);
@@ -267,10 +268,8 @@ exports.buyTokensPassTokens = async function(contractAddress, owner, buyer, toke
                     console.log('transactionHash', transactionHash);
                 })
                 .on('receipt', async (receipt) => {
-                    console.log('receipt', receipt);
                 })
                 .on('confirmation', (confirmationNumber, receipt) => {
-                    console.log('confirmation', confirmationNumber, receipt);
                     resolve(receipt);
                 });
         } catch (error) {
@@ -312,10 +311,10 @@ exports.sellTokensPassEthers = async function(contractAddress, owner, buyer, tok
                     console.log('transactionHash', transactionHash);
                 })
                 .on('receipt', async (receipt) => {
-                    console.log('receipt', receipt);
+                    console.log('receipt');
                 })
                 .on('confirmation', (confirmationNumber, receipt) => {
-                    console.log('confirmation', confirmationNumber, receipt);
+                    console.log('confirmation', confirmationNumber);
                     resolve(receipt);
                 });
         } catch (error) {

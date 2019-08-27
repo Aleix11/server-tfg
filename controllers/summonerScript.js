@@ -11,7 +11,7 @@ let optionsRequest = {
     headers: {
         "Origin": "https://developer.riotgames.com",
         "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Riot-Token": "RGAPI-32363309-6116-4c66-8d8d-e673ce80b1c8",
+        "X-Riot-Token": "RGAPI-f15a0c78-ac48-4bfc-94e1-f37655adeaca",
         "Accept-Language": "es-ES,es;q=0.9",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"
     }

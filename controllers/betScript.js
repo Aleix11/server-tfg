@@ -94,22 +94,24 @@ exports.closeBet = async function (bet, winner) {
 };
 
 exports.closeFromPending = async function (req, res) {
-    let bet = res.body.bet;
-    console.log(bet);
+    let bet = req.body.bet;
 
-    await coreWeb3.closeBetFromPending(bet.addressBettor1, bet.tokens, bet.addressBettor1, contractAddress, bet.id);
+    await coreWeb3.closeBetFromPending(bet.addressBettor1, bet.tokens, owner, contractAddress, bet.id);
 
     await Bet.findOneAndUpdate({
         _id: ObjectId(bet._id)
     }, {
         state: 'close',
         winner: 'no'
-    }, { new: true }).then(bet => {
+    }, { new: true }).then(async bet => {
         console.log(bet._id, bet.state);
+        await Bet.find({
+            state: 'pending'
+        }).then(bets => {
+            res.status(200).send(bets);
+        }).catch(error =>  res.status(400).send(error));;
         return bet;
-    })
-        .catch(error => console.log(error));
-
+    }).catch(error =>  res.status(400).send(error));
 };
 
 exports.getBetsPendingFromUser = async function (req, res) {
@@ -327,13 +329,13 @@ async function checkOpenBets() {
                                 _id: ObjectId(gameUpdated.game._id)
                             }, {
                                 winner: gameUpdated.game.winner
-                            }).then(gamee => console.log('game: ', gamee));
+                            }).then(gamee => console.log('game: ', gamee._id));
 
                             let winner, addressWinner;
                             if(gameUpdated.game.winner === bet.teamBettor1) {
                                 winner = 'bettor1';
                                 addressWinner = bet.addressBettor1;
-                            } else if(gameUpdated.game.winner === bet.teamBettor1) {
+                            } else if(gameUpdated.game.winner === bet.teamBettor2) {
                                 winner = 'bettor2';
                                 addressWinner = bet.addressBettor2;
                             }
@@ -573,14 +575,15 @@ async function stats(user) {
                 });
                 console.log('aaaa', win, loss, bets);
                 let winText, lossText;
-                if (win[0].vs)
+                if (win[0] && win[0].vs)
                     winText = win[0].vs;
                 else
                     'No One';
-                if (loss[0].vs)
+                if (loss[0] && loss[0].vs)
                     lossText = loss[0].vs;
                 else
                     'No One';
+
                 await User.findOneAndUpdate({
                     username: user
                 }, {

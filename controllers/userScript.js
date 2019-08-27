@@ -216,10 +216,12 @@ exports.buyTokensPassTokens = async function (req, res) {
 
     let tokensObject = await coreWeb3.buyTokensPassTokens(contractAddress, owner, buyer, tokens);
 
-    console.log(tokensObject);
-    /*if(tokensObject.tokens) {
-        res.status(200).send({tokens: tokensObject.tokens})
-    }*/
+    console.log('llega aqui');
+    if(!tokensObject.error) {
+        res.status(200).send({tokens: tokensObject})
+    } else {
+        res.status(404).send({error: tokensObject.error})
+    }
 };
 
 exports.sellTokensPassEthers = async function (req, res) {
@@ -230,39 +232,10 @@ exports.sellTokensPassEthers = async function (req, res) {
 
     let tokensObject = await coreWeb3.sellTokensPassEthers(contractAddress, owner, buyer, tokens);
 
-    console.log(tokensObject);
-    /*if(tokensObject.tokens) {
-        res.status(200).send({tokens: tokensObject.tokens})
-    }*/
+    console.log('llega aqui');
+    if(!tokensObject.error) {
+        res.status(200).send({tokens: tokensObject})
+    } else {
+        res.status(404).send({error: tokensObject.error})
+    }
 };
-
-//
-// exports.createWallet = async function (req, res) {
-//     let user = req.body;
-//
-//     let wallet = await coreWeb3.createWallet();
-//     console.log(wallet['0']);
-//
-//     await User.findOneAndUpdate({
-//         _id: ObjectId(user._id)
-//     }, {
-//         address: wallet['0'].address,
-//         privateKey: wallet['0'].privateKey
-//     }, { new: true }).then(usr => {
-//         if(usr && usr.address && usr.privateKey) {
-//             res.status(200).json(usr);
-//         } else {
-//             res.status(404).json({message: 'Error updating user'})
-//         }
-//     }, err => {
-//         res.status(404).json({message: 'Error updating user'})
-//     });
-// };
-//
-// exports.loadWallet = async function (req, res) {
-//     let user = req.body.user;
-//
-//     let wallet = await coreWeb3.createWallet();
-//     console.log(wallet['0']);
-//     user.address = wallet['0'].address;
-// };
