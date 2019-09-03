@@ -12,8 +12,6 @@ const datadir = "/Users/aleix/Library/Ethereum/testnet/";
 
 const web3 = new Web3("http://192.168.0.16:8545");
 
-console.log(web3.currentProvider);
-
 web3.eth.net.isListening()
     .then(console.log);
 // Check if the connection has been made

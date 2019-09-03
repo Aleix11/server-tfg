@@ -58,8 +58,9 @@ contract Bets is ERC20 {
     }
 
     /*
-        @dev Bettor 2 accepts the bet, transfer of tokens from Bettor 2 to this contract, state changed to Open and
-        event emitted.
+        @dev Bettor 2 accepts the bet, transfer of tokens
+        from Bettor 2 to this contract, state changed to
+        Open and event emitted.
         @param _amount Quantity of tokens for bet
     */
     function betCreate(uint256 _amount) external {
@@ -78,7 +79,8 @@ contract Bets is ERC20 {
         @param _amount Quantity of tokens for bet
     */
     function betOpen(uint256 _amount, uint256 _id) external {
-        require(balances[msg.sender] >= _amount); // Ficar require que l'estat sigui pending
+        require(bets[_id].state == BetState.pending); // Comprovar que funciona
+        require(balances[msg.sender] >= _amount);
         approve(msg.sender, _amount);
         transfer(owner, _amount);
         bets[_id].bettor2 = msg.sender;
@@ -116,7 +118,7 @@ contract Bets is ERC20 {
        @dev Bettor 1 cancels the bet, tokens are returned to the Bettor 1, state changed to Close and event emitted
        @param _bettor1 Bettor's 1 address
        @param _amount Quantity of tokens of the bet
-   */
+
     function betCloseFromPendingCancelBet(uint256 _amount, uint256 _id) external {
         require(bets[_id].state == BetState.pending);
         require(bets[_id].bettor1 == msg.sender);
@@ -124,7 +126,7 @@ contract Bets is ERC20 {
         transferFrom(owner, msg.sender, _amount);
         bets[_id].state = BetState.close;
         emit BetClosed(block.timestamp, _id);
-    }
+    }*/
 
     /*
         @dev If a remake occurs, tokens are returned to the bettors, state changed to Close and event emitted
