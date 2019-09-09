@@ -79,7 +79,7 @@ contract Bets is ERC20 {
         @param _amount Quantity of tokens for bet
     */
     function betOpen(uint256 _amount, uint256 _id) external {
-        require(bets[_id].state == BetState.pending); // Comprovar que funciona
+        require(bets[_id].state == BetState.pending);
         require(balances[msg.sender] >= _amount);
         approve(msg.sender, _amount);
         transfer(owner, _amount);

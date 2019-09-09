@@ -8,9 +8,9 @@ const Tx = require('ethereumjs-tx').Transaction;
 const keythereum = require('keythereum');
 
 const pass = "1234567890";
-const datadir = "/Users/aleix/Library/Ethereum/testnet/";
+const datadir = "/home/aleix/.ethereum/testnet/";
 
-const web3 = new Web3("http://192.168.0.16:8545");
+const web3 = new Web3("http://147.83.118.30:8545");
 
 web3.eth.net.isListening()
     .then(console.log);

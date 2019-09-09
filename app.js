@@ -126,8 +126,8 @@ const job = new CronJob('0 */1 * * * *', function() {
 job.start();
 
 io.on('connection', (socket) => {
+
     socket.on('subscribe', async function(users) {
-        console.log(users);
         let room;
         if(users && users.userFrom && users.userTo){
             if(users.userFrom.username && users.userTo.username) {
@@ -208,6 +208,7 @@ io.on('connection', (socket) => {
         console.log('sending room post', message);
         socket.to(message.room).emit('message', msgSaved);
     });
+
 });
 
 let port = process.env.PORT || 3001;

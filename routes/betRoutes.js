@@ -7,6 +7,8 @@ let md_auth = require('../controllers/middlewares/authenticated');
 /* GET users listing. */
 
 /* POST users listing. */
+
+
 router.post('/create', md_auth.ensureAuth, betScripts.createBet);
 router.post('/accept', md_auth.ensureAuth, betScripts.acceptBet);
 router.post('/closeFromPending', md_auth.ensureAuth, betScripts.closeFromPending);

@@ -7,6 +7,7 @@ let md_auth = require('../controllers/middlewares/authenticated');
 /* GET users listing. */
 
 /* POST users listing. */
+
 router.post('/getRoom', md_auth.ensureAuth, chatScript.getChatRoom);
 router.post('/getRoomById', md_auth.ensureAuth, chatScript.getChatRoomById);
 router.post('/getMessages', md_auth.ensureAuth, chatScript.getMessages);

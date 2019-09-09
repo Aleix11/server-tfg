@@ -10,7 +10,6 @@ let ObjectId = require('mongodb').ObjectID;
 
 let summonerScripts = require('../controllers/summonerScript');
 
-
 let owner = "0x2c33f8f424d25db0c90f47daeb57f30c700ac196";
 let contractAddress = "0xbf1e3315d6f064ac3111420991cfdadb99665d6d";
 
