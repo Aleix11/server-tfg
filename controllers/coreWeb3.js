@@ -8,7 +8,7 @@ const Tx = require('ethereumjs-tx').Transaction;
 const keythereum = require('keythereum');
 
 const pass = "1234567890";
-const datadir = "/home/aleix/.ethereum/testnet/";
+const datadir = "/home/aleix/.ethereum/";
 
 const web3 = new Web3("http://147.83.118.30:8545");
 
