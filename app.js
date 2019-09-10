@@ -218,6 +218,6 @@ http.listen(port, function(){
 });
 
 app.listen(3000);
-console.log('listening chat in http://localhost:' + 3000);
+console.log('listening in http://localhost:' + 3000);
 
 module.exports = app;
