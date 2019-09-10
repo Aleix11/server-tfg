@@ -214,9 +214,10 @@ io.on('connection', (socket) => {
 let port = process.env.PORT || 3001;
 
 http.listen(port, function(){
-    console.log('listening in http://localhost:' + port);
+    console.log('listening chat in http://localhost:' + port);
 });
 
 app.listen(3000);
+console.log('listening chat in http://localhost:' + 3000);
 
 module.exports = app;
