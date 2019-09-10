@@ -63,6 +63,9 @@ contract Bets is ERC20 {
         Open and event emitted.
         @param _amount Quantity of tokens for bet
     */
+
+
+
     function betCreate(uint256 _amount) external {
         require(balances[msg.sender] >= _amount);
         require(_amount > 0);
@@ -70,7 +73,6 @@ contract Bets is ERC20 {
         transfer(owner, _amount);
         bets[numBets++] = Bet(_amount, BetState.pending, msg.sender, address(0));
         emit BetPending(block.timestamp, numBets);
-
     }
 
     /*
