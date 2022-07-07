@@ -21,7 +21,7 @@
     "jwt-simple": "^0.5.5",
     "keythereum": "^1.0.4",
     "mocha": "^6.1.4",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "mongodb": "latest",
     "mongoose": "^5.4.9",
     "morgan": "~1.9.0",
